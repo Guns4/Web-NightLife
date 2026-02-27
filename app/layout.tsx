@@ -68,8 +68,32 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "EntertainmentBusiness",
+    "name": "NightLife Indonesia",
+    "description": "Find the best nightlife experiences - Karaoke, Clubs, Spas, KTV and more. Your ultimate guide to premium entertainment venues in Indonesia.",
+    "url": "https://nightlife.id",
+    "areaServed": {
+      "@type": "Country",
+      "name": "Indonesia"
+    },
+    "serviceType": ["Karaoke", "Club", "Spa", "KTV", "Entertainment"],
+    "priceRange": "$$",
+    "sameAs": [
+      "https://instagram.com/nightlifeid",
+      "https://twitter.com/nightlifeid"
+    ]
+  };
+
   return (
     <html lang="en" className="dark">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body
         className={`${syne.variable} ${inter.variable} antialiased bg-deep-black text-white`}
       >

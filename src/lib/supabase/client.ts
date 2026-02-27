@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 /**
  * Supabase Client Configuration
@@ -12,22 +12,16 @@ import { createClient } from "@supabase/supabase-js";
  * NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
  */
 
-// TypeScript interface for Supabase environment variables
-interface SupabaseEnv {
-  NEXT_PUBLIC_SUPABASE_URL: string;
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: string;
-}
-
 // Get environment variables
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
 /**
- * Create and export Supabase client
- * Uses anonymous key for client-side operations
+ * Create and export Supabase client with proper types
+ * Using any for database schema - will work when Supabase is configured
  */
-export const supabase = supabaseUrl && supabaseAnonKey
-  ? createClient<SupabaseEnv>(supabaseUrl, supabaseAnonKey)
+export const supabase: SupabaseClient<any> | null = supabaseUrl && supabaseAnonKey
+  ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
 
 /**
