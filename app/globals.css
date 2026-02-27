@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+:root {
+  /* Core colors - Dark theme by default */
+  --background: #000000;
+  --foreground: #ffffff;
+  
+  /* Primary colors */
+  --primary: #c026d3;
+  --primary-dark: #9333ea;
+  
+  /* Background colors */
+  --dark-navy: #020617;
+  --deep-black: #000000;
+  
+  /* Glass effect colors */
+  --glass-bg: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.2);
+}
+
+@theme inline {
+  /* Colors */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-dark);
+  --color-dark-navy: var(--dark-navy);
+  --color-deep-black: var(--deep-black);
+  
+  /* Glass effect colors */
+  --color-glass-bg: var(--glass-bg);
+  --color-glass-border: var(--glass-border);
+  
+  /* Font families */
+  --font-syne: var(--font-syne);
+  --font-inter: var(--font-inter);
+  
+  /* Gradients */
+  --gradient-premium-purple: linear-gradient(to right, #c026d3, #7c3aed);
+  --gradient-dark-overlay: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent, rgba(0, 0, 0, 0.9));
+  
+  /* Shadows */
+  --shadow-soft-glow: 0 0 20px rgba(192, 38, 211, 0.3);
+  --shadow-soft-glow-lg: 0 0 40px rgba(192, 38, 211, 0.4);
+  
+  /* Border radius */
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+  --radius-full: 9999px;
+}
+
+/* Base styles */
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--dark-navy);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-dark);
+}
+
+/* Selection color */
+::selection {
+  background: var(--primary);
+  color: white;
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+}
+
+/* Premium gradient text */
+.gradient-text {
+  background: var(--gradient-premium-purple);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glow effect */
+.glow-effect {
+  box-shadow: var(--shadow-soft-glow);
+}
+
+.glow-effect-lg {
+  box-shadow: var(--shadow-soft-glow-lg);
+}
