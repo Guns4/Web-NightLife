@@ -306,6 +306,7 @@ CREATE TABLE vibe_checks (
     tag_vibe TEXT[] DEFAULT '{}',
     -- Verification & Transparency
     receipt_image_url TEXT,
+    ai_verification_confidence FLOAT, -- AI confidence score (0-1)
     is_verified_purchase BOOLEAN DEFAULT false,
     -- Proof of Presence (Geolocation verification)
     user_latitude FLOAT,

@@ -1,0 +1,290 @@
+n // =====================================================
+// IDENTITY SERVICE - PRISMA SCHEMA
+// User Management, Authentication & Authorization
+// =====================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =====================================================
+// ENUMS
+// =====================================================
+
+enum Role {
+  GUEST
+  USER
+  OWNER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum AccountType {
+  EMAIL
+  PHONE
+  GOOGLE
+  APPLE
+  FACEBOOK
+  WHATSAPP
+}
+
+enum SessionStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
+// =====================================================
+// MODELS
+// =====================================================
+
+// User Model - Core identity
+model User {
+  id            String    @id @default(cuid())
+  email         String?   @unique
+  phone         String?   @unique
+  fullName      String?
+  displayName  String?
+  avatarUrl    String?
+  bio          String?
+  
+  // Role-based access
+  role          Role      @default(USER)
+  
+  // Status
+  isActive      Boolean   @default(true)
+  isVerified    Boolean   @default(false)
+  emailVerified DateTime?
+  phoneVerified DateTime?
+  
+  // Profile fields
+  dateOfBirth   DateTime?
+  gender        String?
+  city          String?
+  country       String?
+  
+  // Trust Score (0-100)
+  trustScore    Int       @default(50)
+  
+  // Preferences
+  preferences   Json      @default("{}")
+  settings      Json      @default("{}")
+  
+  // Timestamps
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLoginAt   DateTime?
+
+  // Relations
+  accounts      Account[]
+  sessions      Session[]
+  venues        Venue[]   @relation("OwnerVenues")
+  
+  // Social connections
+  friends       Friendship[]     @relation("UserFriends")
+  friendOf      Friendship[]     @relation("FriendOf")
+  
+  // Activity
+  vibeChecks    VibeCheck[]
+  bookings      Booking[]
+  wallet        Wallet?
+  
+  @@index([email])
+  @@index([phone])
+  @@index([role])
+}
+
+// Account Model - OAuth & credential providers
+model Account {
+  id                String      @id @default(cuid())
+  userId            String
+  type              AccountType
+  provider          String
+  providerAccountId String
+  
+  // OAuth fields
+  refresh_token     String?     @db.Text
+  access_token      String?     @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?     @db.Text
+  session_state     String?
+  
+  // Credentials (for email/password)
+  passwordHash      String?
+  
+  // Status
+  isActive          Boolean     @default(true)
+  
+  // Timestamps
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  
+  // Relation
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Constraints
+  @@unique([provider, providerAccountId])
+  @@unique([userId, type])
+  @@index([userId])
+}
+
+// Session Model - Active user sessions
+model Session {
+  id            String        @id @default(cuid())
+  sessionToken  String        @unique
+  userId        String
+  expiresAt     DateTime
+  status        SessionStatus @default(ACTIVE)
+  
+  // Device info
+  userAgent     String?
+  ipAddress     String?
+  deviceType    String?
+  location      String?
+  
+  // Timestamps
+  createdAt     DateTime      @default(now())
+  lastActiveAt  DateTime      @default(now())
+  
+  // Relation
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([status])
+}
+
+// Verification Token Model - Email/phone verification
+model VerificationToken {
+  identifier  String
+  token      String      @unique
+  expires    DateTime
+  
+  @@unique([identifier, token])
+  @@index([expires])
+}
+
+// =====================================================
+// VENUE (Partial - for owner relation)
+// =====================================================
+
+model Venue {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  ownerId     String?
+  
+  // Location (PostGIS geography point - will be added via migration)
+  latitude    Float?
+  longitude   Float?
+  location    Unsupported("GEOGRAPHY(POINT, 4326)")?
+  
+  // Status
+  isActive    Boolean  @default(true)
+  isVerified  Boolean  @default(false)
+  isBoosted   Boolean  @default(false)
+  boostExpiry DateTime?
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  owner       User?    @relation("OwnerVenues", fields: [ownerId], references: [id])
+  
+  // References from other schemas
+  vibeChecks  VibeCheck[]
+  bookings    Booking[]
+  promos      Promo[]
+}
+
+// =====================================================
+// ADDITIONAL MODELS (from existing schema)
+// =====================================================
+
+model VibeCheck {
+  id                    String   @id @default(cuid())
+  venueId               String
+  userId                String?
+  rating                Int
+  comment               String?
+  receiptImageUrl       String?
+  aiVerificationConfidence Float?
+  isVerifiedPurchase    Boolean  @default(false)
+  userLatitude          Float?
+  userLongitude         Float?
+  isVerifiedVisit       Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  
+  venue                 Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  user                  User?    @relation(fields: [userId], references: [id])
+}
+
+model Booking {
+  id            String   @id @default(cuid())
+  venueId       String
+  userId        String?
+  guestName     String
+  guestPhone    String
+  guestEmail    String?
+  date          DateTime
+  time          String
+  pax           Int
+  status        String   @default("pending")
+  totalAmount   Float?
+  notes         String?
+  createdAt     DateTime @default(now())
+  
+  venue         Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  user          User?    @relation(fields: [userId], references: [id])
+}
+
+model Promo {
+  id          String   @id @default(cuid())
+  venueId     String
+  title       String
+  description String?
+  discountType String
+  discountValue Float?
+  priceValue  Float?
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean  @default(true)
+  targetCategory String?
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  
+  venue       Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
+}
+
+model Wallet {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  balance     Float    @default(0)
+  points      Int      @default(0)
+  tier        String   @default("bronze")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Friendship {
+  id        String   @id @default(cuid())
+  userId    String
+  friendId  String
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  
+  user      User     @relation("UserFriends", fields: [userId], references: [id], onDelete: Cascade)
+  friend    User     @relation("FriendOf", fields: [friendId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, friendId])
+}

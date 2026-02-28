@@ -4,8 +4,9 @@ import { useState, useEffect, use } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import Image from 'next/image';
-import { sendWhatsAppBooking, generateSimpleWhatsAppLink } from '@/lib/utils/whatsapp';
+import { sendWhatsAppBooking, generateSimpleWhatsAppLink, generateVenueWhatsAppLink, generateBookingWhatsAppLink } from '@/lib/utils/whatsapp';
 import ReviewForm from '@/components/reviews/ReviewForm';
+import SocialShareCard from '@/components/reviews/SocialShareCard';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -116,6 +117,13 @@ export default function VenuePage({ params }: { params: Promise<{ id: string }> 
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showGallery, setShowGallery] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
+  const [showShareCard, setShowShareCard] = useState(false);
+  const [lastReviewData, setLastReviewData] = useState<{
+    rating: number;
+    comment: string;
+    isVerified: boolean;
+    isAIVerified: boolean;
+  } | null>(null);
   
   // Booking form state
   const [guestName, setGuestName] = useState('');
@@ -196,32 +204,26 @@ export default function VenuePage({ params }: { params: Promise<{ id: string }> 
 
   function handleBookingSubmit(e: React.FormEvent) {
     e.preventDefault();
-    
-    if (!venue) return;
-    
-    // Format date for display
-    const dateObj = new Date(bookingDate);
-    const formattedDate = dateObj.toLocaleDateString('en-ID', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    });
-    
-    sendWhatsAppBooking({
-      venueName: venue.name,
-      guestName: guestName || 'Guest',
-      date: formattedDate,
-      pax: pax
-    });
-    
-    setShowBookingModal(false);
+    handleBookingWithDetails();
   }
 
   function handleSimpleBooking() {
     if (!venue) return;
-    const url = generateSimpleWhatsAppLink(venue.name);
+    const url = generateVenueWhatsAppLink(venue.name, venue.whatsapp_number || '');
     window.open(url, '_blank');
+  }
+
+  function handleBookingWithDetails() {
+    if (!venue) return;
+    const url = generateBookingWhatsAppLink(
+      venue.name,
+      venue.whatsapp_number || '',
+      guestName || 'Guest',
+      bookingDate,
+      pax
+    );
+    window.open(url, '_blank');
+    setShowBookingModal(false);
   }
 
   const openingHours = venue?.opening_hours || DEFAULT_HOURS;
@@ -480,7 +482,27 @@ export default function VenuePage({ params }: { params: Promise<{ id: string }> 
                 venueId={venue.id} 
                 venueLat={venue.latitude} 
                 venueLon={venue.longitude}
-                onReviewSubmitted={fetchVenueData}
+                onReviewSubmitted={(reviewData) => {
+                  fetchVenueData();
+                  // Store review data and show share card
+                  if (reviewData) {
+                    setLastReviewData(reviewData);
+                  }
+                  setShowShareCard(true);
+                }}
+              />
+            )}
+
+            {/* Social Share Card - Show after review submission */}
+            {showShareCard && venue && (
+              <SocialShareCard
+                venueName={venue.name}
+                venueAddress={venue.address || venue.city}
+                rating={lastReviewData?.rating || 5}
+                comment={lastReviewData?.comment}
+                userName="You"
+                isVerified={lastReviewData?.isVerified || false}
+                isAIVerified={lastReviewData?.isAIVerified || false}
               />
             )}
           </div>

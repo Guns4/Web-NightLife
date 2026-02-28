@@ -6,7 +6,7 @@ import { MapPin, RefreshCw, ChevronRight, Loader2 } from "lucide-react";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { getVenuesNearMe } from "@/lib/actions/discovery";
 import { VenueWithRelations, Promo } from "@/lib/database/types";
-import { formatDistance } from "@/lib/utils/geo";
+import { formatDistance } from "@/lib/utils/gps";
 import VenueCard from "@/components/cards/VenueCard";
 
 /**

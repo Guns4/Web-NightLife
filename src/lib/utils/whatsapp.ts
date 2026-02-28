@@ -57,10 +57,83 @@ export function sendWhatsAppBooking(data: BookingData): void {
 /**
  * Generate a simple contact WhatsApp link (without booking form)
  * @param venueName - Name of the venue
+ * @param phoneNumber - Optional venue WhatsApp number (uses default if not provided)
  * @returns Encoded WhatsApp link
  */
-export function generateSimpleWhatsAppLink(venueName: string): string {
+export function generateSimpleWhatsAppLink(venueName: string, phoneNumber?: string): string {
   const message = `Hi! I'm interested in booking at ${venueName}. Could you share available slots and pricing?`;
   const encodedMessage = encodeURIComponent(message);
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`;
+  const phone = phoneNumber || WHATSAPP_NUMBER;
+  return `https://wa.me/${phone}?text=${encodedMessage}`;
+}
+
+/**
+ * Generate a WhatsApp link for direct venue contact
+ * @param venueName - Name of the venue
+ * @param venuePhone - Venue's WhatsApp number (with country code, e.g., '62812345678')
+ * @returns Encoded WhatsApp link
+ */
+export function generateVenueWhatsAppLink(venueName: string, venuePhone: string): string {
+  // Clean the phone number - remove any non-digit characters except +
+  const cleanPhone = venuePhone.replace(/[^0-9+]/g, '');
+  
+  // Add country code if not present
+  let formattedPhone = cleanPhone;
+  if (!cleanPhone.startsWith('+')) {
+    if (cleanPhone.startsWith('0')) {
+      formattedPhone = '62' + cleanPhone.substring(1);
+    } else if (cleanPhone.startsWith('62')) {
+      formattedPhone = cleanPhone;
+    } else {
+      formattedPhone = '62' + cleanPhone;
+    }
+  }
+  
+  const message = `Hi ${venueName}, I'd like to book a table! What slots are available?`;
+  const encodedMessage = encodeURIComponent(message);
+  return `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
+}
+
+/**
+ * Generate a WhatsApp link with booking details
+ * @param venueName - Name of the venue
+ * @param venuePhone - Venue's WhatsApp number
+ * @param guestName - Guest's name
+ * @param date - Booking date
+ * @param pax - Number of guests
+ * @returns Encoded WhatsApp link
+ */
+export function generateBookingWhatsAppLink(
+  venueName: string, 
+  venuePhone: string, 
+  guestName: string, 
+  date: string, 
+  pax: number
+): string {
+  // Clean the phone number
+  const cleanPhone = venuePhone.replace(/[^0-9+]/g, '');
+  
+  // Add country code if not present
+  let formattedPhone = cleanPhone;
+  if (!cleanPhone.startsWith('+')) {
+    if (cleanPhone.startsWith('0')) {
+      formattedPhone = '62' + cleanPhone.substring(1);
+    } else if (cleanPhone.startsWith('62')) {
+      formattedPhone = cleanPhone;
+    } else {
+      formattedPhone = '62' + cleanPhone;
+    }
+  }
+  
+  const message = `Hi ${venueName}! 🎉
+
+I'd like to make a reservation:
+- Name: ${guestName}
+- Date: ${date}
+- Guests: ${pax} person(s)
+
+Please confirm availability. Thank you! 🙏`;
+  
+  const encodedMessage = encodeURIComponent(message);
+  return `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
 }

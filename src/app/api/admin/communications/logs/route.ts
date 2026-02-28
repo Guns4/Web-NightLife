@@ -87,8 +87,8 @@ export async function GET(request: NextRequest) {
     const transformedLogs = logs?.map(log => ({
       id: log.id,
       recipient_id: log.recipient_id,
-      owner_name: log.venue_managers?.full_name || 'Unknown',
-      venue_name: log.venue_managers?.venues?.name || 'Unknown',
+      owner_name: log.venue_managers?.[0]?.full_name || 'Unknown',
+      venue_name: log.venue_managers?.[0]?.venues?.[0]?.name || 'Unknown',
       whatsapp_number: log.phone_number,
       message_type: log.message_type,
       status: log.status,
