@@ -1,0 +1,35 @@
+// =====================================================
+// SEARCH ANALYTICS PRISMA SCHEMA
+// AfterHoursID - Discovery Analytics
+// =====================================================
+
+model SearchAnalytics {
+  id           String   @id @default(uuid())
+  query        String   @db.VarChar(255)
+  userId       String?  @map("user_id")
+  resultsCount Int      @default(0) @map("results_count")
+  filters      Json?
+  sessionId    String?  @map("session_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([query])
+  @@index([createdAt(sort: Desc)])
+  @@index([userId])
+  @@map("search_analytics")
+}
+
+// For tracking trending searches (computed daily)
+model TrendingSearch {
+  id          String   @id @default(uuid())
+  query       String   @unique @db.VarChar(255)
+  searchCount Int      @default(0) @map("search_count")
+  uniqueUsers Int      @default(0) @map("unique_users")
+  totalResults BigInt  @default(0) @map("total_results")
+  firstSearched DateTime @map("first_searched")
+  lastSearched  DateTime @map("last_searched")
+  computedAt   DateTime @default(now()) @map("computed_at")
+
+  @@map("trending_searches")
+}

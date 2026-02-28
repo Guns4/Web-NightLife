@@ -1,0 +1,232 @@
+# =====================================================
+# KUBERNETES HORIZONTAL POD AUTOSCALER (HPA)
+# AfterHoursID - Production Configuration
+# =====================================================
+
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: afterhoursid-web-hpa
+  namespace: production
+  labels:
+    app: afterhoursid
+    tier: frontend
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: afterhoursid-web
+  minReplicas: 3
+  maxReplicas: 50
+  metrics:
+    # CPU-based scaling: trigger at 70% CPU usage
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    # Memory-based scaling: trigger at 80% memory usage
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+    # Custom metric: request count per second
+    - type: Pods
+      pods:
+        metric:
+          name: http_requests_per_second
+        target:
+          type: AverageValue
+          averageValue: "1000"
+  behavior:
+    # Scale-up behavior
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies:
+        # Maximum 10 pods increase per 15 seconds
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+        # Or maximum 4 pods increase per 15 seconds
+        - type: Pods
+          value: 4
+          periodSeconds: 15
+      selectPolicy: Max
+    # Scale-down behavior
+    scaleDown:
+      stabilizationWindowSeconds: 300  # 5 minutes cooldown
+      policies:
+        # Maximum 10% pods decrease per minute
+        - type: Percent
+          value: 10
+          periodSeconds: 60
+        # Or maximum 1 pod decrease per minute
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+      selectPolicy: Min
+
+---
+# HPA for API/Backend Services
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: afterhoursid-api-hpa
+  namespace: production
+  labels:
+    app: afterhoursid
+    tier: api
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: afterhoursid-api
+  minReplicas: 5
+  maxReplicas: 100
+  metrics:
+    # CPU-based scaling: trigger at 60% for API (more critical)
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60
+    # Memory-based scaling
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 75
+    # Custom metric: API latency
+    - type: Pods
+      pods:
+        metric:
+          name: api_latency_p99
+        target:
+          type: AverageValue
+          averageValue: "200ms"
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 15  # Faster scale-up for API
+      policies:
+        - type: Percent
+          value: 200  # Double pods if needed
+          periodSeconds: 15
+        - type: Pods
+          value: 10
+          periodSeconds: 15
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 600  # Longer cooldown for API
+      policies:
+        - type: Percent
+          value: 5
+          periodSeconds: 60
+
+---
+# HPA for WebSocket Server
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: afterhoursid-websocket-hpa
+  namespace: production
+  labels:
+    app: afterhoursid
+    tier: websocket
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: afterhoursid-websocket
+  minReplicas: 2
+  maxReplicas: 30
+  metrics:
+    # Connection-based scaling
+    - type: Pods
+      pods:
+        metric:
+          name: active_websocket_connections
+        target:
+          type: AverageValue
+          averageValue: "500"
+    # CPU-based
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 65
+
+---
+# HPA for Background Workers
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: afterhoursid-workers-hpa
+  namespace: production
+  labels:
+    app: afterhoursid
+    tier: workers
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: afterhoursid-workers
+  minReplicas: 2
+  maxReplicas: 20
+  metrics:
+    # Queue depth-based scaling
+    - type: External
+      external:
+        metric:
+          name: rabbitmq_queue_messages
+          selector:
+            matchLabels:
+              queue: afterhours_notifications
+        target:
+          type: AverageValue
+          averageValue: "100"
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 80
+
+---
+# HPA for Database Proxy (PgBouncer/RDS Proxy)
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: afterhoursid-db-proxy-hpa
+  namespace: production
+  labels:
+    app: afterhoursid
+    tier: database
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: afterhoursid-db-proxy
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 60
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 900  # 15 minutes - very conservative

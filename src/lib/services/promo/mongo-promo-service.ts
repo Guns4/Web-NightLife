@@ -46,6 +46,8 @@ async function getDb(): Promise<Db> {
 // =====================================================
 
 export type PromoType = 
+  | 'buy1get1' 
+  | 'discount' 
   | 'free_flow' 
   | 'ladies_night' 
   | 'event' 
@@ -100,11 +102,35 @@ export interface CustomPromo {
   [key: string]: any; // Allow any custom fields
 }
 
+export interface Buy1Get1Promo {
+  type: 'buy1get1';
+  title: string;
+  buyQuantity: number;
+  getQuantity: number;
+  applicableItems: string[];
+  minSpend?: number;
+  terms?: string;
+}
+
+export interface DiscountPromo {
+  type: 'discount';
+  title: string;
+  discountPercent: number;
+  discountAmount?: number;
+  minSpend?: number;
+  maxDiscount?: number;
+  applicableItems?: string[];
+  code?: string;
+  terms?: string;
+}
+
 export type FlexiblePromoData = 
   | FreeFlowPromo 
   | LadiesNightPromo 
   | EventPromo 
-  | HappyHourPromo 
+  | HappyHourPromo
+  | Buy1Get1Promo
+  | DiscountPromo
   | CustomPromo;
 
 // =====================================================

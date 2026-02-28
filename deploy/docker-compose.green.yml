@@ -1,0 +1,103 @@
+# =====================================================
+# DOCKER COMPOSE - GREEN ENVIRONMENT
+# AfterHoursID - Production Reliability
+# =====================================================
+
+version: '3.8'
+
+services:
+  # Next.js Application (Green)
+  app-green:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      target: production
+    image: ghcr.io/afterhoursid/afterhours:latest
+    container_name: afterhours-green
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - MIDTRANS_SERVER_KEY=${MIDTRANS_SERVER_KEY}
+      - MIDTRANS_CLIENT_KEY=${MIDTRANS_CLIENT_KEY}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+
+  # PostgreSQL (Shared with Blue)
+  postgres:
+    image: postgres:15-alpine
+    container_name: afterhours-db-green
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PgBouncer (Connection Pooling)
+  pgbouncer:
+    image: edoburu/pgbouncer
+    container_name: afterhours-pgbouncer-green
+    restart: unless-stopped
+    ports:
+      - "6433:5432"
+    environment:
+      - POOL_MODE=transaction
+      - MAX_CLIENT_CONN=200
+      - DEFAULT_POOL_SIZE=20
+      - MIN_POOL_SIZE=5
+      - DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Redis (Shared)
+  redis:
+    image: redis:7-alpine
+    container_name: afterhours-redis-green
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+
+  # RabbitMQ (Shared)
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: afterhours-rabbitmq-green
+    restart: unless-stopped
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
+
+networks:
+  default:
+    name: afterhours-network-green

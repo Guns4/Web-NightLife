@@ -554,3 +554,39 @@ export async function searchVenuesAdvanced(
     return [];
   }
 }
+
+/**
+ * Search venues - wrapper for AI Concierge
+ * Maps simple search parameters to VenueFilters
+ */
+export async function searchVenues(
+  params: {
+    query?: string;
+    city?: string;
+    category?: string;
+    lat?: number;
+    lng?: number;
+    radius?: number;
+    limit?: number;
+  }
+): Promise<VenueWithRelations[]> {
+  const filters: VenueFilters = {
+    query: params.query,
+    city: params.city,
+    category: params.category as VenueCategory,
+  };
+
+  // If lat/lng/radius provided, use getVenuesNearMe instead
+  if (params.lat !== undefined && params.lng !== undefined && params.radius !== undefined) {
+    const result = await getVenuesNearMe(
+      params.lat,
+      params.lng,
+      params.radius,
+      params.radius, // maxRadius = radius
+      params.limit || 20
+    );
+    return result.venues;
+  }
+
+  return searchVenuesAdvanced(filters, params.limit || 20);
+}

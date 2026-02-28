@@ -1,11 +1,42 @@
 # Robots.txt for AfterHoursID
-# https://afterhoursid.com
+# https://afterhours.id
 
 User-agent: *
 Allow: /
 
+# Disallow admin and private routes
+Disallow: /api/
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /auth/
+Disallow: /_next/
+Disallow: /checkin/
+Disallow: /*?*
+
+# Allow specific public API routes
+Allow: /api/v1/venues/
+Allow: /api/health
+
 # Sitemap
-Sitemap: https://afterhoursid.com/sitemap.xml
+Sitemap: https://afterhours.id/sitemap.xml
 
 # Crawl-delay (optional)
 Crawl-delay: 1
+
+# Googlebot specific rules
+User-agent: Googlebot
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /auth/
+Disallow: /_next/
+
+# Bingbot specific rules
+User-agent: Bingbot
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /auth/
+Disallow: /_next/

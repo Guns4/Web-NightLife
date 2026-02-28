@@ -100,3 +100,31 @@ export async function POST(request: NextRequest) {
     // Set HTTP-only cookies
     await setAuthCookies(tokens);
 
+    // Create a session record
+    await prisma.session.create({
+      data: {
+        sessionToken: tokens.refreshToken,
+        userId: user.id,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        status: "ACTIVE",
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role,
+      },
+      message: "Registration successful",
+    });
+  } catch (error) {
+    console.error("Registration error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}

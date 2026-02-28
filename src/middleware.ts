@@ -1,5 +1,20 @@
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+/**
+ * =====================================================
+ * AFTERHOURS ID - AUTH MIDDLEWARE
+ * JWT-based route protection with role-based access
+ * =====================================================
+ */
+
 import { NextResponse, type NextRequest } from "next/server";
+import { 
+  verifyAccessToken, 
+  getAccessTokenFromCookie,
+  canAccessAdmin,
+  canAccessOwner,
+  getDashboardByRole,
+  type UserRole 
+} from "@/lib/auth/auth-utils";
+import { hasPermission, isSuperAdmin, type Permission } from "@/lib/auth/rbac";
 
 // Rate limiting map for GPS verification endpoint
 const gpsRateLimit = new Map<string, { count: number; resetTime: number }>();
@@ -33,103 +48,89 @@ function checkGpsRateLimit(ip: string): boolean {
 }
 
 /**
- * User Roles for RBAC
- * - GUEST: Read only, Claim Promo
- * - VENUE_MANAGER: Manage own venue data, view specific analytics
- * - SUPER_ADMIN: Global audit, Verify Mystery Guest logs
+ * Route permission matrix by role
  */
-export type UserRole = "guest" | "venue_manager" | "super_admin";
+const PUBLIC_ROUTES = [
+  "/",
+  "/discovery",
+  "/guides",
+  "/partners",
+  "/auth/signin",
+  "/auth/signup",
+  "/auth/callback",
+  "/api/ppc",
+  "/api/v1/venues",
+  "/api/auth/register",
+  "/api/auth/login",
+];
+
+const ADMIN_ROUTES = [
+  "/admin",
+  "/dashboard/super-admin",
+  "/dashboard/ops",
+  "/api/admin",
+  "/api/cron",
+];
+
+// Routes that require SUPER_ADMIN role only
+const SUPER_ADMIN_ONLY_ROUTES = [
+  "/admin/settings",
+  "/admin/finance",
+  "/api/admin/settings",
+  "/api/admin/config",
+  "/api/admin/tiers",
+];
+
+// Routes that allow both ADMIN and SUPER_ADMIN
+const ADMIN_MODERATION_ROUTES = [
+  "/admin/moderation",
+  "/admin/reviews",
+  "/api/admin/reviews",
+];
+
+const OWNER_ROUTES = [
+  "/dashboard/owner",
+  "/dashboard/marketing",
+  "/dashboard/admin",
+  "/venue",
+];
+
+const PROTECTED_USER_ROUTES = [
+  "/dashboard",
+  "/profile",
+  "/wallet",
+  "/checkin",
+];
 
 /**
- * Route permission matrix
+ * Check if route matches any prefix
  */
-const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
-  guest: [
-    "/",
-    "/discovery",
-    "/guides",
-    "/partners",
-    "/auth",
-    "/api/ppc",
-  ],
-  venue_manager: [
-    "/dashboard/owner",
-    "/dashboard/marketing",
-  ],
-  super_admin: [
-    "/dashboard/super-admin",
-    "/dashboard/ops",
-    "/admin",
-    "/api/admin",
-    "/api/cron",
-  ],
-};
-
-/**
- * Check if user has permission to access route
- */
-function hasPermission(role: string | null, pathname: string): boolean {
-  if (!role) {
-    // Guest permissions
-    return ROLE_PERMISSIONS.guest.some(route => pathname.startsWith(route));
-  }
-
-  const userRole = role as UserRole;
-  const allowedRoutes = ROLE_PERMISSIONS[userRole] || [];
-  
-  // Check if pathname starts with any allowed route
-  return allowedRoutes.some(route => pathname.startsWith(route));
+function matchesRoute(pathname: string, routes: string[]): boolean {
+  return routes.some(route => 
+    pathname === route || pathname.startsWith(route + "/")
+  );
 }
 
 /**
- * Supabase Auth Middleware with RBAC
- * Handles route protection and user redirects
+ * Extract JWT from request
  */
+async function getJWTFromRequest(request: NextRequest): Promise<string | null> {
+  // First try Authorization header
+  const authHeader = request.headers.get("authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    return authHeader.substring(7);
+  }
+  
+  // Fall back to cookie
+  return getAccessTokenFromCookie();
+}
 
+/**
+ * Main middleware function
+ */
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  });
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value;
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({ name, value, ...options });
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          });
-          response.cookies.set({ name, value, ...options });
-        },
-        remove(name: string, options: CookieOptions) {
-          request.cookies.set({ name, value: "", ...options });
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          });
-          response.cookies.set({ name, value: "", ...options });
-        },
-      },
-    }
-  );
-
-  // Refresh session if expired
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   const { pathname } = request.nextUrl;
-
+  
   // Apply rate limiting for GPS check-in endpoints (Edge-level)
   if (pathname.includes('/api/checkin') || pathname.includes('/api/verify-gps')) {
     const clientIp = request.headers.get('x-forwarded-for') || 'unknown';
@@ -141,74 +142,108 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Protected routes that require authentication
-  const protectedRoutes = ["/dashboard", "/profile", "/venues/create"];
+  // Skip API routes that handle their own auth
+  if (pathname.startsWith("/api/auth/")) {
+    // Allow register and login endpoints
+    if (pathname.includes("/api/auth/register") || pathname.includes("/api/auth/login")) {
+      return NextResponse.next();
+    }
+    // For other auth endpoints (me, refresh, logout), let them handle their own auth
+    return NextResponse.next();
+  }
+
+  // Check if it's a public route
+  if (matchesRoute(pathname, PUBLIC_ROUTES)) {
+    return NextResponse.next();
+  }
+
+  // Get JWT token
+  const token = await getJWTFromRequest(request);
   
-  // Owner-only routes
-  const ownerRoutes = ["/dashboard/owner", "/venues/manage"];
+  // If no token, redirect to login for protected routes
+  if (!token) {
+    // Check if trying to access protected route
+    if (
+      matchesRoute(pathname, PROTECTED_USER_ROUTES) ||
+      matchesRoute(pathname, ADMIN_ROUTES) ||
+      matchesRoute(pathname, OWNER_ROUTES)
+    ) {
+      const loginUrl = new URL("/auth/signin", request.url);
+      loginUrl.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+    return NextResponse.next();
+  }
+
+  // Verify the JWT
+  const payload = verifyAccessToken(token);
   
-  // Public routes
-  const publicRoutes = ["/", "/venues", "/auth"];
-
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
-  const isOwnerRoute = ownerRoutes.some(route => pathname.startsWith(route));
-  const isPublicRoute = publicRoutes.some(route => pathname === route || pathname.startsWith(route + "/"));
-
-  // Redirect unauthenticated users trying to access protected routes
-  if (!user && isProtectedRoute) {
-    const redirectUrl = new URL("/auth/signin", request.url);
-    redirectUrl.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(redirectUrl);
+  if (!payload) {
+    // Token invalid or expired
+    // Try to refresh using refresh token endpoint
+    if (
+      matchesRoute(pathname, PROTECTED_USER_ROUTES) ||
+      matchesRoute(pathname, ADMIN_ROUTES) ||
+      matchesRoute(pathname, OWNER_ROUTES)
+    ) {
+      const loginUrl = new URL("/auth/signin", request.url);
+      loginUrl.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+    return NextResponse.next();
   }
 
-  // Redirect authenticated users away from auth pages
-  if (user && pathname.startsWith("/auth/")) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
+  const userRole = payload.role as UserRole;
 
-  // Check user role for owner routes
-  if (user && isOwnerRoute) {
-    // Get user profile to check role
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    // Redirect non-owners trying to access owner routes
-    if (!profile || (profile.role !== "owner" && profile.role !== "admin")) {
-      return NextResponse.redirect(new URL("/", request.url));
+  // Check admin route access
+  if (matchesRoute(pathname, ADMIN_ROUTES)) {
+    if (!canAccessAdmin(userRole)) {
+      // Redirect to appropriate dashboard
+      return NextResponse.redirect(new URL(getDashboardByRole(userRole), request.url));
     }
   }
 
-  // RBAC: Check role-based permissions
-  if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    const userRole = profile?.role || "guest";
-    
-    // Check if user has permission for the requested path
-    if (!hasPermission(userRole, pathname)) {
-      // User doesn't have permission, redirect to appropriate dashboard
-      if (userRole === "super_admin") {
-        return NextResponse.redirect(new URL("/dashboard/super-admin", request.url));
-      } else if (userRole === "owner") {
-        return NextResponse.redirect(new URL("/dashboard/owner", request.url));
-      }
-      return NextResponse.redirect(new URL("/", request.url));
-    }
-  } else {
-    // Guest user - check if they have permission
-    if (!hasPermission(null, pathname)) {
-      const redirectUrl = new URL("/auth/signin", request.url);
-      redirectUrl.searchParams.set("redirect", pathname);
-      return NextResponse.redirect(redirectUrl);
+  // Check SUPER_ADMIN only routes
+  if (matchesRoute(pathname, SUPER_ADMIN_ONLY_ROUTES)) {
+    if (!isSuperAdmin(userRole)) {
+      // Redirect to admin dashboard with error
+      const adminUrl = new URL("/admin", request.url);
+      adminUrl.searchParams.set("error", "super_admin_only");
+      return NextResponse.redirect(adminUrl);
     }
   }
+
+  // Check admin moderation routes (ADMIN and SUPER_ADMIN allowed)
+  if (matchesRoute(pathname, ADMIN_MODERATION_ROUTES)) {
+    if (!canAccessAdmin(userRole)) {
+      return NextResponse.redirect(new URL(getDashboardByRole(userRole), request.url));
+    }
+  }
+
+  // Check owner route access
+  if (matchesRoute(pathname, OWNER_ROUTES)) {
+    if (!canAccessOwner(userRole)) {
+      return NextResponse.redirect(new URL(getDashboardByRole(userRole), request.url));
+    }
+  }
+
+  // Check protected user routes
+  if (matchesRoute(pathname, PROTECTED_USER_ROUTES)) {
+    // All authenticated users can access their dashboard
+    // But we could add more granular role checks here
+  }
+
+  // Add user info to request headers for downstream use
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-user-id", payload.userId);
+  requestHeaders.set("x-user-email", payload.email);
+  requestHeaders.set("x-user-role", payload.role);
+
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 
   return response;
 }

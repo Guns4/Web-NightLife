@@ -1,0 +1,179 @@
+# =====================================================
+# SECURITY & PERFORMANCE AUDIT WORKFLOW
+# AfterHoursID - System Governance
+# =====================================================
+
+name: Security & Performance Audit
+
+on:
+  schedule:
+    # Run weekly on Monday
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+
+jobs:
+  # =====================================================
+  # 1. VULNERABILITY SCAN (Snyk)
+  # =====================================================
+  snyk-scan:
+    name: Snyk Vulnerability Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: test
+          args: --severity-threshold=high
+        continue-on-error: true
+
+      - name: Upload Snyk results
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: snyk-report
+          path: .snyk
+
+  # =====================================================
+  # 2. OWASP ZAP SCAN
+  # =====================================================
+  owasp-scan:
+    name: OWASP ZAP Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Start application
+        run: |
+          docker-compose up -d
+          sleep 30
+
+      - name: OWASP ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.9.0
+        with:
+          target: 'http://localhost:3000'
+
+      - name: OWASP ZAP Full Scan
+        if: github.event_name == 'schedule'
+        uses: zaproxy/action-full-scan@v0.9.0
+        with:
+          target: 'http://localhost:3000'
+
+      - name: Cleanup
+        if: always()
+        run: docker-compose down
+
+  # =====================================================
+  # 3. LIGHTHOUSE PERFORMANCE
+  # =====================================================
+  lighthouse:
+    name: Lighthouse Performance Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Start server
+        run: npm run start &
+        env:
+          PORT: 3000
+
+      - name: Wait for server
+        run: sleep 15
+
+      - name: Run Lighthouse
+        uses: treosh/lighthouse-ci-action@v10
+        with:
+          urls: |
+            http://localhost:3000/
+            http://localhost:3000/discovery
+            http://localhost:3000/venue/123
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+          configPath: ./lighthouserc.json
+
+      - name: Upload Lighthouse results
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report
+          path: .lighthouseci
+
+  # =====================================================
+  # 4. DEPENDENCY AUDIT
+  # =====================================================
+  dependency-audit:
+    name: Dependency Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+      - name: Check for vulnerabilities
+        run: |
+          npm audit --json > audit-report.json || true
+          
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-report
+          path: audit-report.json
+
+  # =====================================================
+  # 5. CODE QUALITY
+  # =====================================================
+  code-quality:
+    name: Code Quality Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run TypeScript check
+        run: npm run type-check
+
+      - name: Run tests
+        run: npm run test -- --coverage
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/lcov.info

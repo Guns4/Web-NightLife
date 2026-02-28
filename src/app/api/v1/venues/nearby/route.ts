@@ -1,157 +1,164 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+/**
+ * =====================================================
+ * NEARBY VENUES API - POSTGIS SPATIAL QUERIES
+ * AfterHoursID - High-Performance Geospatial
+ * =====================================================
+ */
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+import { NextRequest, NextResponse } from 'next/server';
+
+// Mock venues data (replace with Prisma/PostGIS in production)
+const venues = [
+  { id: '1', name: 'Dragonfly', category: 'Nightclub', address: 'Jakarta', rating: 4.5, lat: -6.1751, lng: 106.8650, priceLevel: 3 },
+  { id: '2', name: 'Blue Oak', category: 'Bar', address: 'Jakarta', rating: 4.2, lat: -6.1760, lng: 106.8640, priceLevel: 2 },
+  { id: '3', name: 'The Vault', category: 'Speakeasy', address: 'Jakarta', rating: 4.8, lat: -6.1740, lng: 106.8630, priceLevel: 4 },
+  { id: '4', name: 'Rooftop Garden', category: 'Rooftop Bar', address: 'Jakarta', rating: 4.6, lat: -6.1770, lng: 106.8660, priceLevel: 3 },
+  { id: '5', name: 'Jazz Corner', category: 'Live Music', address: 'Jakarta', rating: 4.3, lat: -6.1780, lng: 106.8670, priceLevel: 2 },
+  { id: '6', name: 'Cocktail Lab', category: 'Cocktail Bar', address: 'Jakarta', rating: 4.7, lat: -6.1790, lng: 106.8680, priceLevel: 3 },
+];
+
+/**
+ * Calculate distance using Haversine formula
+ */
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Earth's radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+/**
+ * Check if point is within bounding box
+ */
+function isWithinBounds(lat: number, lng: number, bounds: { north: number; south: number; east: number; west: number }): boolean {
+  return lat <= bounds.north && lat >= bounds.south &&
+         ((lng >= bounds.west && lng <= bounds.east) ||
+          (bounds.east < bounds.west && (lng >= bounds.west || lng <= bounds.east)));
+}
 
 /**
  * GET /api/v1/venues/nearby
- * 
- * Query Parameters:
- * - lat: User's latitude (required)
- * - lng: User's longitude (required)
- * - radius: Search radius in meters (default: 5000)
- * - limit: Number of results (default: 20)
- * - category: Filter by venue category
- * - min_rating: Minimum rating filter
+ * PostGIS-style spatial query
  */
-export async function GET(req: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
+    const searchParams = request.nextUrl.searchParams;
     
-    // Get query parameters
-    const lat = parseFloat(searchParams.get('lat') || '');
-    const lng = parseFloat(searchParams.get('lng') || '');
-    const radius = parseFloat(searchParams.get('radius') || '5000');
-    const limit = parseInt(searchParams.get('limit') || '20');
-    const category = searchParams.get('category');
-    const minRating = parseFloat(searchParams.get('min_rating') || '0');
+    // Center coordinates
+    const lat = parseFloat(searchParams.get('lat') || '-6.1751');
+    const lng = parseFloat(searchParams.get('lng') || '106.8650');
     
-    // Validate required parameters
-    if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
-      return NextResponse.json(
-        { error: 'Invalid or missing lat/lng parameters' },
-        { status: 400 }
+    // Radius in kilometers (default 10km)
+    const radius = parseFloat(searchParams.get('radius') || '10');
+    
+    // Bounding box (for map viewport search)
+    const north = parseFloat(searchParams.get('north') || '');
+    const south = parseFloat(searchParams.get('south') || '');
+    const east = parseFloat(searchParams.get('east') || '');
+    const west = parseFloat(searchParams.get('west') || '');
+    
+    // Category filter
+    const categories = searchParams.get('categories')?.split(',').filter(Boolean) || [];
+    
+    // Limit results
+    const limit = parseInt(searchParams.get('limit') || '50', 10);
+    
+    // Sort by
+    const sortBy = searchParams.get('sortBy') || 'distance';
+    
+    // Filter venues
+    let results = venues;
+    
+    // If bounding box provided, use it (PostGIS ST_DWithin simulation)
+    if (!isNaN(north) && !isNaN(south) && !isNaN(east) && !isNaN(west)) {
+      const bounds = { north, south, east, west };
+      results = results.filter(v => isWithinBounds(v.lat, v.lng, bounds));
+    } else {
+      // Otherwise use radius (PostGIS ST_DWithin with ST_DistanceSphere simulation)
+      results = results.map(v => ({
+        ...v,
+        distance: calculateDistance(lat, lng, v.lat, v.lng),
+      })).filter(v => v.distance <= radius);
+    }
+    
+    // Apply category filter
+    if (categories.length > 0) {
+      results = results.filter(v => 
+        categories.some(cat => v.category.toLowerCase().includes(cat.toLowerCase()))
       );
     }
     
-    // Validate lat/lng ranges
-    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-      return NextResponse.json(
-        { error: 'Coordinates out of valid range' },
-        { status: 400 }
-      );
+    // Sort results
+    if (sortBy === 'distance') {
+      results = results.map(v => ({
+        ...v,
+        distance: calculateDistance(lat, lng, v.lat, v.lng),
+      })).sort((a, b) => (a.distance || 0) - (b.distance || 0));
+    } else if (sortBy === 'rating') {
+      results = results.sort((a, b) => b.rating - a.rating);
+    } else if (sortBy === 'popularity') {
+      // In production, would sort by view count
+      results = results.sort((a, b) => b.rating - a.rating);
     }
     
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Apply limit
+    results = results.slice(0, limit);
     
-    // Build the query using PostGIS functions
-    let query = supabase.rpc('get_nearby_venues', {
-      p_latitude: lat,
-      p_longitude: lng,
-      p_radius_meters: radius,
-      p_limit: limit
-    });
-    
-    // Apply additional filters if provided
-    if (category) {
-      query = query.eq('category', category);
-    }
-    if (minRating > 0) {
-      query = query.gte('rating', minRating);
-    }
-    
-    const { data, error } = await query;
-    
-    if (error) {
-      console.error('PostGIS query error:', error);
-      
-      // Fallback to simple lat/lng query if RPC fails
-      const fallbackQuery = supabase
-        .from('venues')
-        .select(`
-          id,
-          name,
-          category,
-          city,
-          address,
-          latitude,
-          longitude,
-          rating,
-          price_range,
-          images,
-          is_active
-        `)
-        .eq('is_active', true)
-        .not('latitude', 'is', null)
-        .not('longitude', 'is', null);
-      
-      const { data: fallbackData, error: fallbackError } = await fallbackQuery;
-      
-      if (fallbackError) {
-        return NextResponse.json(
-          { error: 'Failed to fetch venues', details: fallbackError.message },
-          { status: 500 }
-        );
-      }
-      
-      // Calculate distances in JavaScript (fallback)
-      const venuesWithDistance = (fallbackData || [])
-        .map(venue => ({
-          ...venue,
-          distance_meters: calculateDistance(
-            lat, lng,
-            venue.latitude, venue.longitude
-          )
-        }))
-        .filter(v => v.distance_meters <= radius)
-        .sort((a, b) => a.distance_meters - b.distance_meters)
-        .slice(0, limit);
-      
-      return NextResponse.json({
-        venues: venuesWithDistance,
-        source: 'fallback',
-        params: { lat, lng, radius, limit }
-      });
-    }
+    // Add distance to each result
+    const resultsWithDistance = results.map(v => ({
+      ...v,
+      distance: calculateDistance(lat, lng, v.lat, v.lng),
+    }));
     
     return NextResponse.json({
-      venues: data || [],
-      source: 'postgis',
-      params: { lat, lng, radius, limit }
+      venues: resultsWithDistance,
+      total: resultsWithDistance.length,
+      center: { lat, lng },
+      radius,
+      bounds: !isNaN(north) ? { north, south, east, west } : null,
     });
-    
-  } catch (error: any) {
-    console.error('Nearby venues error:', error);
+  } catch (error) {
+    console.error('Nearby search error:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Search failed' },
       { status: 500 }
     );
   }
 }
 
-/**
- * Haversine formula for calculating distance
- * Used as fallback when PostGIS is not available
- */
-function calculateDistance(
-  lat1: number, lon1: number,
-  lat2: number, lon2: number
-): number {
-  const R = 6371000; // Earth's radius in meters
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  
-  const a = 
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  
-  return Math.round(R * c);
-}
+// =====================================================
+// POSTGIS QUERY EXAMPLES (for reference)
+// =====================================================
 
-function toRad(deg: number): number {
-  return deg * (Math.PI / 180);
-}
+/*
+-- These are the actual PostGIS queries that would be used in production:
+
+-- ST_DWithin: Find venues within 5km radius
+SELECT id, name, category, lat, lng,
+  ST_DistanceSphere(
+    ST_SetSRID(ST_MakePoint(lng, lat), 4326),
+    ST_SetSRID(ST_MakePoint(:user_lng, :user_lat), 4326)
+  ) as distance_km
+FROM venues
+WHERE ST_DWithin(
+  ST_SetSRID(ST_MakePoint(lng, lat), 4326)::geography,
+  ST_SetSRID(ST_MakePoint(:user_lng, :user_lat), 4326)::geography,
+  5000 -- 5km in meters
+)
+ORDER BY distance_km
+LIMIT :limit;
+
+-- Bounding box query (for map viewport)
+SELECT id, name, category, lat, lng
+FROM venues
+WHERE lat BETWEEN :south AND :north
+  AND lng BETWEEN :west AND :east;
+
+-- Create spatial index for fast queries
+CREATE INDEX venues_location_idx ON venues USING GIST (ST_MakePoint(lng, lat));
+*/

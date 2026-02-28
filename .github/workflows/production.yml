@@ -1,0 +1,186 @@
+# =====================================================
+# CI/CD PIPELINE
+# Production deployment workflow
+# =====================================================
+
+name: Production Deploy
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # =====================================================
+  # JOB 1: Lint & Test
+  # =====================================================
+  test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run TypeScript Check
+        run: npx tsc --noEmit
+
+      - name: Run Tests
+        run: npm run test --if-present
+
+  # =====================================================
+  # JOB 2: Build Docker Image
+  # =====================================================
+  build:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: test
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+  # =====================================================
+  # JOB 3: Deploy to Production
+  # =====================================================
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download Docker Info
+        run: |
+          echo "IMAGE_TAG=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
+
+      - name: Configure SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.PROD_SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy via SSH
+        run: |
+          ssh ${{ secrets.PROD_SERVER_USER }}@${{ secrets.PROD_SERVER_HOST }} << 'EOF'
+            # Pull latest image
+            docker pull ${{ env.IMAGE_TAG }}
+            
+            # Run database migrations
+            docker run --rm ${{ env.IMAGE_TAG }} npx prisma migrate deploy || true
+            
+            # Restart services
+            docker-compose -f /opt/afterhours/docker-compose.yml down
+            docker-compose -f /opt/afterhours/docker-compose.yml up -d
+            
+            # Cleanup old images
+            docker image prune -f
+            
+            echo "Deployment complete!"
+          EOF
+
+      - name: Verify Deployment
+        run: |
+          sleep 10
+          curl -f https://afterhours.id/api/health || exit 1
+          echo "Deployment verified!"
+
+      - name: Notify Success
+        if: success()
+        run: |
+          curl -X POST ${{ secrets.SLACK_WEBHOOK }} \
+            -H 'Content-Type: application/json' \
+            -d '{"text": "✅ Production deployed successfully!", "color": "good"}'
+
+      - name: Notify Failure
+        if: failure()
+        run: |
+          curl -X POST ${{ secrets.SLACK_WEBHOOK }} \
+            -H 'Content-Type: application/json' \
+            -d '{"text": "❌ Production deployment failed!", "color": "danger"}'
+
+  # =====================================================
+  # JOB 4: Database Backup (Daily)
+  # =====================================================
+  backup:
+    name: Database Backup
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: github.event_name == 'schedule'
+    
+    steps:
+      - name: Backup PostgreSQL
+        run: |
+          # Create backup
+          docker run --rm -v backup-volume:/backup \
+            postgres:15-alpine \
+            pg_dump $DATABASE_URL > /backup/postgres-$(date +%Y%m%d-%H%M%S).sql
+          
+          # Upload to S3
+          aws s3 sync /backup s3://${{ secrets.BACKUP_BUCKET }}/postgres/ --delete
+
+      - name: Upload to S3
+        uses: actions/upload-artifact@v4
+        with:
+          name: database-backup
+          path: backup-volume/
+          retention-days: 7

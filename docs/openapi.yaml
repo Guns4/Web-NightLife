@@ -1,0 +1,714 @@
+# =====================================================
+# AFTERHOURSID OPENAPI 3.0 SPECIFICATION
+# System Governance & Documentation
+# =====================================================
+
+openapi: 3.0.3
+info:
+  title: AfterHoursID API
+  description: |
+    Indonesian nightlife platform API - Like "Zomato for Nightlife"
+    
+    ## Authentication
+    Most endpoints require JWT authentication. Include the token in the Authorization header:
+    ```
+    Authorization: Bearer <your-jwt-token>
+    ```
+    
+    ## Rate Limits
+    - API: 100 requests/second
+    - Auth: 10 requests/second
+    - Search: 20 requests/second
+  version: 1.0.0
+  contact:
+    name: AfterHoursID Dev Team
+    email: dev@afterhours.id
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://api.afterhours.id
+    description: Production server
+  - url: https://staging.afterhours.id
+    description: Staging server
+  - url: http://localhost:3000
+    description: Local development
+
+# =====================================================
+# COMPONENTS
+# =====================================================
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token from /api/auth/login
+  
+  schemas:
+    # User schemas
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        role:
+          type: string
+          enum: [GUEST, USER, VENUE_MANAGER, ADMIN, SUPER_ADMIN]
+        createdAt:
+          type: string
+          format: date-time
+    
+    CreateUserRequest:
+      type: object
+      required:
+        - email
+        - password
+        - name
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        name:
+          type: string
+    
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+    
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+    
+    # Venue schemas
+    Venue:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        address:
+          type: string
+        location:
+          type: object
+          properties:
+            lat:
+              type: number
+            lng:
+              type: number
+        category:
+          type: string
+        images:
+          type: array
+          items:
+            type: string
+        rating:
+          type: number
+        priceRange:
+          type: string
+        openingHours:
+          type: object
+        ownerId:
+          type: string
+    
+    # Review schemas
+    Review:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        venueId:
+          type: string
+        userId:
+          type: string
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        title:
+          type: string
+        content:
+          type: string
+        isVerified:
+          type: boolean
+        weight:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+    
+    # Booking schemas
+    Booking:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        venueId:
+          type: string
+        userId:
+          type: string
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+        guests:
+          type: integer
+        status:
+          type: string
+          enum: [PENDING, CONFIRMED, CANCELLED, COMPLETED]
+        createdAt:
+          type: string
+          format: date-time
+    
+    # Error schemas
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        code:
+          type: string
+    
+    ValidationError:
+      type: object
+      properties:
+        error:
+          type: string
+          default: validation_error
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+  responses:
+    Unauthorized:
+      description: Unauthorized - Invalid or missing JWT
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: unauthorized
+            message: Invalid or missing authentication token
+    
+    Forbidden:
+      description: Forbidden - Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: forbidden
+            message: Insufficient permissions
+    
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: not_found
+            message: Resource not found
+    
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+    
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: internal_error
+            message: An unexpected error occurred
+
+# =====================================================
+# PATHS - AUTHENTICATION
+# =====================================================
+
+paths:
+  # =====================================================
+  # AUTHENTICATION
+  # =====================================================
+  
+  /api/auth/register:
+    post:
+      summary: Register a new user
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '409':
+          description: Email already exists
+  
+  /api/auth/login:
+    post:
+      summary: Login user
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+  /api/auth/me:
+    get:
+      summary: Get current user profile
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    
+  /api/auth/refresh:
+    post:
+      summary: Refresh access token
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refreshToken
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    
+  /api/auth/logout:
+    post:
+      summary: Logout user
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logged out successfully
+    
+  # =====================================================
+  # VENUES
+  # =====================================================
+  
+  /api/v1/venues:
+    get:
+      summary: List venues
+      tags:
+        - Venues
+      parameters:
+        - name: lat
+          in: query
+          schema:
+            type: number
+        - name: lng
+          in: query
+          schema:
+            type: number
+        - name: radius
+          in: query
+          schema:
+            type: number
+            default: 10
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: List of venues
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  venues:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Venue'
+                  pagination:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                      limit:
+                        type: integer
+                      total:
+                        type: integer
+  
+  /api/v1/venues/{id}:
+    get:
+      summary: Get venue details
+      tags:
+        - Venues
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Venue details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Venue'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    
+  # =====================================================
+  # REVIEWS
+  # =====================================================
+  
+  /api/v1/reviews:
+    post:
+      summary: Submit a review
+      tags:
+        - Reviews
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - venueId
+                - rating
+                - title
+                - content
+              properties:
+                venueId:
+                  type: string
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                title:
+                  type: string
+                content:
+                  type: string
+                images:
+                  type: array
+                  items:
+                    type: string
+                receiptImageUrl:
+                  type: string
+      responses:
+        '201':
+          description: Review submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          description: Rate limit exceeded
+  
+  /api/v1/venues/{venueId}/reviews:
+    get:
+      summary: Get venue reviews
+      tags:
+        - Reviews
+      parameters:
+        - name: venueId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of reviews
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Review'
+  
+  # =====================================================
+  # BOOKINGS
+  # =====================================================
+  
+  /api/booking/reserve:
+    post:
+      summary: Create a booking
+      tags:
+        - Bookings
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - venueId
+                - date
+                - time
+                - guests
+              properties:
+                venueId:
+                  type: string
+                date:
+                  type: string
+                  format: date
+                time:
+                  type: string
+                guests:
+                  type: integer
+                  minimum: 1
+                notes:
+                  type: string
+      responses:
+        '201':
+          description: Booking created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+    
+  # =====================================================
+  # PROMOS
+  # =====================================================
+  
+  /api/promos:
+    get:
+      summary: Get active promos
+      tags:
+        - Promos
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: List of active promos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  promos:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        title:
+                          type: string
+                        tier:
+                          type: string
+                          enum: [basic, gold, platinum]
+  
+  /api/promos/checkout:
+    post:
+      summary: Create promo checkout
+      tags:
+        - Promos
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - venueId
+                - title
+                - description
+                - tier
+                - startDate
+                - endDate
+              properties:
+                venueId:
+                  type: string
+                title:
+                  type: string
+                description:
+                  type: string
+                imageUrl:
+                  type: string
+                tier:
+                  type: string
+                  enum: [basic, gold, platinum]
+                startDate:
+                  type: string
+                  format: date
+                endDate:
+                  type: string
+                  format: date
+      responses:
+        '201':
+          description: Checkout created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  promo:
+                    type: object
+                  payment:
+                    type: object
+    
+  # =====================================================
+  # HEALTH & METRICS
+  # =====================================================
+  
+  /health:
+    get:
+      summary: Health check
+      tags:
+        - System
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  uptime:
+                    type: number
+        '503':
+          description: Service is unhealthy
+  
+  /metrics:
+    get:
+      summary: Prometheus metrics
+      tags:
+        - System
+      responses:
+        '200':
+          description: Metrics in Prometheus format
+          content:
+            text/plain:
+              schema:
+                type: string
+
+# =====================================================
+# SECURITY
+# =====================================================
+
+security:
+  - bearerAuth: []

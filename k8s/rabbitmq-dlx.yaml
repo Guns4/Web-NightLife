@@ -1,0 +1,294 @@
+# =====================================================
+# RABBITMQ DEAD LETTER EXCHANGE (DLX) CONFIGURATION
+# AfterHoursID - Reliable Message Processing
+# =====================================================
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rabbitmq-config
+  namespace: production
+data:
+  # Main RabbitMQ configuration
+  rabbitmq.conf: |
+    # Networking
+    listeners.tcp.default = 5672
+    management.tcp.port = 15672
+    
+    # Clustering
+    cluster_formation.peer_discovery_backend = rabbit_peer_discovery_k8s
+    cluster_formation.k8s.host = kubernetes.default.svc.cluster.local
+    cluster_formation.k8s.addresses = ${RABBITMQ_SERVICE_HOSTS}
+    
+    # High Availability
+    quorum_cluster_formation.hosts = rabbitmq-0.rabbitmq,rabbitmq-1.rabbitmq,rabbitmq-2.rabbitmq
+    quorum_cluster_formation.minimum_cluster_size = 2
+    
+    # Memory & Disk
+    vm_memory_high_watermark.relative = 0.7
+    disk_free_limit.absolute = 2GB
+    
+    # Default exchange
+    exchange_fanout_prefix = amq.
+    
+    # Dead Letter settings
+    dead_letter_exchange = afterhours.dlx
+    dead_letter_routing_key = dead-letter
+
+---
+# Dead Letter Exchanges and Queues
+apiVersion: rabbitmq.com/v1beta1
+kind: Exchange
+metadata:
+  name: afterhours.dlx
+  namespace: production
+spec:
+  name: afterhours.dlx
+  type: topic
+  durable: true
+  autoDelete: false
+  internal: false
+  arguments:
+    # Enable TTL on DLX
+    x-dead-letter-exchange: ""
+    x-dead-letter-routing-key: dead-letter
+---
+# Dead Letter Queue
+apiVersion: rabbitmq.com/v1beta1
+Kind: Queue
+metadata:
+  name: afterhours.dlq
+  namespace: production
+spec:
+  name: afterhours.dlq
+  durable: true
+  autoDelete: false
+  exclusive: false
+  arguments:
+    # Message TTL in DLQ (auto-cleanup after 7 days)
+    x-message-ttl: 604800000
+    # No more requeuing from DLQ
+    x-overflow: reject-publish
+---
+# Bind DLQ to default exchange
+apiVersion: rabbitmq.com/v1beta1
+kind: Binding
+metadata:
+  name: afterhours-dlq-binding
+  namespace: production
+spec:
+  source: ""
+  destination: afterhours.dlq
+  routingKey: dead-letter
+  destinationType: queue
+
+---
+# =====================================================
+# MAIN QUEUES WITH DLX CONFIGURATION
+# =====================================================
+
+# Notifications Queue
+apiVersion: rabbitmq.com/v1beta1
+kind: Exchange
+metadata:
+  name: afterhours.notifications
+  namespace: production
+spec:
+  name: afterhours.notifications
+  type: topic
+  durable: true
+  arguments: {}
+---
+apiVersion: rabbitmq.com/v1beta1
+kind: Queue
+metadata:
+  name: afterhours.notifications
+  namespace: production
+spec:
+  name: afterhours.notifications
+  durable: true
+  arguments:
+    # DLX configuration
+    x-dead-letter-exchange: afterhours.dlx
+    x-dead-letter-routing-key: notifications.dead
+    # TTL: 24 hours
+    x-message-ttl: 86400000
+    # Max length: 100,000 messages
+    x-max-length: 100000
+    x-overflow: reject-publish
+---
+apiVersion: rabbitmq.com/v1beta1
+kind: Binding
+metadata:
+  name: notifications-binding
+  namespace: production
+spec:
+  source: afterhours.notifications
+  destination: afterhours.notifications
+  routingKey: notification.*
+  destinationType: queue
+
+---
+# Email Queue
+apiVersion: rabbitmq.com/v1beta1
+kind: Queue
+metadata:
+  name: afterhours.emails
+  namespace: production
+spec:
+  name: afterhours.emails
+  durable: true
+  arguments:
+    x-dead-letter-exchange: afterhours.dlx
+    x-dead-letter-routing-key: emails.dead
+    x-message-ttl: 172800000  # 48 hours
+    x-max-length: 50000
+    x-overflow: reject-publish
+
+---
+# SMS/WhatsApp Queue
+apiVersion: rabbitmq.com/v1beta1
+kind: Queue
+metadata:
+  name: afterhours.sms
+  namespace: production
+spec:
+  name: afterhours.sms
+  durable: true
+  arguments:
+    x-dead-letter-exchange: afterhours.dlx
+    x-dead-letter-routing-key: sms.dead
+    x-message-ttl: 3600000  # 1 hour (time-sensitive)
+    x-max-length: 10000
+    x-overflow: reject-publish
+
+---
+# Push Notifications Queue
+apiVersion: rabbitmq.com/v1beta1
+kind: Queue
+metadata:
+  name: afterhours.push
+  namespace: production
+spec:
+  name: afterhours.push
+  durable: true
+  arguments:
+    x-dead-letter-exchange: afterhours.dlx
+    x-dead-letter-routing-key: push.dead
+    x-message-ttl: 3600000  # 1 hour
+    x-max-length: 50000
+
+---
+# Webhook Processing Queue
+apiVersion: rabbitmq.com/v1beta1
+kind: Queue
+metadata:
+  name: afterhours.webhooks
+  namespace: production
+spec:
+  name: afterhours.webhooks
+  durable: true
+  arguments:
+    x-dead-letter-exchange: afterhours.dlx
+    x-dead-letter-routing-key: webhooks.dead
+    x-message-ttl: 300000  # 5 minutes (webhooks are time-sensitive)
+    x-max-length: 5000
+
+---
+# Analytics Events Queue (can be longer TTL)
+apiVersion: rabbitmq.com/v1beta1
+kind: Queue
+metadata:
+  name: afterhours.analytics
+  namespace: production
+spec:
+  name: afterhours.analytics
+  durable: true
+  arguments:
+    x-dead-letter-exchange: afterhours.dlx
+    x-dead-letter-routing-key: analytics.dead
+    x-message-ttl: 604800000  # 7 days
+    x-max-length: 500000
+
+---
+# Cron Jobs Queue
+apiVersion: rabbitmq.com/v1beta1
+kind: Queue
+metadata:
+  name: afterhours.cron
+  namespace: production
+spec:
+  name: afterhours.cron
+  durable: true
+  arguments:
+    x-dead-letter-exchange: afterhours.dlx
+    x-dead-letter-routing-key: cron.dead
+    x-message-ttl: 3600000  # 1 hour
+    x-max-length: 1000
+
+---
+# =====================================================
+# PRIORITY QUEUES FOR CRITICAL OPERATIONS
+# =====================================================
+
+# Payment Processing (High Priority)
+apiVersion: rabbitmq.com/v1beta1
+kind: Queue
+metadata:
+  name: afterhours.payments
+  namespace: production
+spec:
+  name: afterhours.payments
+  durable: true
+  arguments:
+    x-dead-letter-exchange: afterhours.dlx
+    x-dead-letter-routing-key: payments.dead
+    x-message-ttl: 300000  # 5 minutes - critical!
+    x-max-length: 5000
+    x-overflow: reject-publish
+    # Priority queue support
+    x-max-priority: 10
+
+---
+# =====================================================
+# DLQ MONITORING SERVICE
+# =====================================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dlq-monitor
+  namespace: production
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dlq-monitor
+  template:
+    metadata:
+      labels:
+        app: dlq-monitor
+    spec:
+      containers:
+        - name: monitor
+          image: afterhoursid/dlq-monitor:latest
+          env:
+            - name: RABBITMQ_URL
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: url
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+      volumes:
+        - name: config
+          configMap:
+            name: dlq-monitor-config

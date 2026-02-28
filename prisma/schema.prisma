@@ -1,4 +1,4 @@
-n // =====================================================
+// =====================================================
 // IDENTITY SERVICE - PRISMA SCHEMA
 // User Management, Authentication & Authorization
 // =====================================================
@@ -59,6 +59,7 @@ model User {
   // Status
   isActive      Boolean   @default(true)
   isVerified    Boolean   @default(false)
+  isShadowBanned Boolean   @default(false) // Shadow ban - hides user's reviews publicly
   emailVerified DateTime?
   phoneVerified DateTime?
   
@@ -179,18 +180,38 @@ model Venue {
   id          String   @id @default(cuid())
   name        String
   slug        String   @unique
+  description String?
+  address     String?
+  city        String?
   ownerId     String?
   
-  // Location (PostGIS geography point - will be added via migration)
+  // Location (PostGIS geography point - using raw SQL for queries)
   latitude    Float?
   longitude   Float?
-  location    Unsupported("GEOGRAPHY(POINT, 4326)")?
+  
+  // Tagging System
+  musicGenres String[]  @default([])
+  vibes       String[]  @default([])
+  facilities  String[]  @default([])
+  
+  // Category
+  category    String?   @default("nightclub")
   
   // Status
   isActive    Boolean  @default(true)
   isVerified  Boolean  @default(false)
   isBoosted   Boolean  @default(false)
   boostExpiry DateTime?
+  
+  // Trust Score (calculated from verified reviews)
+  trustScore  Float    @default(50.0)
+  
+  // Rating Aggregates (updated via trigger)
+  averageRating Float  @default(0.0)
+  totalReviews  Int    @default(0)
+  
+  // Gallery
+  galleryImages String[] @default([])
   
   // Timestamps
   createdAt   DateTime @default(now())
@@ -218,13 +239,66 @@ model VibeCheck {
   receiptImageUrl       String?
   aiVerificationConfidence Float?
   isVerifiedPurchase    Boolean  @default(false)
+  
+  // GPS Verification
+  gpsStatus             String   @default("PENDING")  // MATCH, MISMATCH, PENDING
+  isEliteVerified       Boolean  @default(false)     // Struk + GPS verified
   userLatitude          Float?
   userLongitude         Float?
-  isVerifiedVisit       Boolean  @default(false)
+  isVerifiedVisit       Boolean  @default(false)     // GPS verified only
+  
+  // Social Interactions
+  likesCount            Int      @default(0)
+  reportsCount          Int      @default(0)
+  isFlaggedForReview   Boolean  @default(false)     // Auto-flagged for high reports
+  
+  // Rejection tracking
+  isApproved            Boolean  @default(false)
+  rejectionReasonCode   String?  // Code: FAKE_REVIEW, INAPPROPRIATE, SPAM, POLICY_VIOLATION
+  rejectionReason       String?  // Human-readable reason
+  reviewedBy            String?  // Admin user ID who reviewed
+  reviewedAt            DateTime?
+  
   createdAt             DateTime @default(now())
   
   venue                 Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
   user                  User?    @relation(fields: [userId], references: [id])
+  likes                 ReviewLike[]
+  reports               ReviewReport[]
+}
+
+// =====================================================
+// SOCIAL INTERACTION MODELS
+// =====================================================
+
+model ReviewLike {
+  id          String    @id @default(cuid())
+  reviewId    String
+  userId      String
+  createdAt   DateTime  @default(now())
+  
+  review      VibeCheck @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  
+  @@unique([reviewId, userId]) // One like per user per review
+  @@index([reviewId])
+  @@index([userId])
+}
+
+model ReviewReport {
+  id          String    @id @default(cuid())
+  reviewId    String
+  userId      String
+  reason      String    // FAKE, SPAM, INAPPROPRIATE, etc.
+  description String?
+  status      String    @default("pending") // pending, reviewed, resolved
+  createdAt   DateTime  @default(now())
+  resolvedAt  DateTime?
+  
+  review      VibeCheck @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  
+  @@index([reviewId])
+  @@index([userId])
+  @@index([status])
 }
 
 model Booking {
@@ -242,8 +316,26 @@ model Booking {
   notes         String?
   createdAt     DateTime @default(now())
   
+  // Extended Reservation Fields
+  tableType     String?   // REGULAR, VIP, ROYAL, BOOTH
+  tableNumber   String?
+  depositAmount Float?
+  depositPaid   Boolean  @default(false)
+  specialRequests String?
+  confirmationCode String? @unique
+  
+  // Timestamps
+  confirmedAt   DateTime?
+  cancelledAt   DateTime?
+  completedAt   DateTime?
+  
   venue         Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
   user          User?    @relation(fields: [userId], references: [id])
+  
+  @@index([venueId])
+  @@index([userId])
+  @@index([status])
+  @@index([date, time])
 }
 
 model Promo {
@@ -261,7 +353,99 @@ model Promo {
   imageUrl    String?
   createdAt   DateTime @default(now())
   
-  venue       Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  venue       Venue   @relation(fields: [venueId], references: [id], onDelete: Cascade)
+}
+
+// =====================================================
+// ADVERTISEMENT & PAYMENT MODELS
+// =====================================================
+
+model AdSlot {
+  id            String    @id @default(cuid())
+  venueId       String
+  
+  // Slot Configuration
+  slotType      String    // HERO, BANNER, SPONSORED, FEATURED
+  startDate     DateTime
+  endDate       DateTime
+  
+  // Status
+  isActive      Boolean   @default(false)
+  isPaid        Boolean   @default(false)
+  
+  // Pricing
+  priceAmount   Float
+  currency      String    @default("IDR")
+  
+  // Timestamps
+  createdAt     DateTime  @default(now())
+  paidAt        DateTime?
+  
+  // Relations
+  venue         Venue     @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  payment       Payment?
+  
+  @@index([venueId])
+  @@index([isActive])
+  @@index([startDate, endDate])
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SETTLED
+  FAILED
+  EXPIRED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CREDIT_CARD
+  DEBIT_CARD
+  BANK_TRANSFER
+  E_WALLET
+  GOPAY
+  OVO
+  DANA
+  SHOPEEPAY
+  QRIS
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  adSlotId        String        @unique
+  
+  // Payment Details
+  amount          Float
+  currency        String        @default("IDR")
+  method          PaymentMethod?
+  status          PaymentStatus  @default(PENDING)
+  
+  // Gateway Reference
+  transactionId   String?       @unique  // Midtrans/Xendit transaction ID
+  orderId         String?        @unique
+  
+  // Payment Info
+  customerName    String?
+  customerEmail   String?
+  customerPhone   String?
+  
+  // Timestamps
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  settledAt       DateTime?
+  expiredAt       DateTime?
+  
+  // Webhook Data
+  webhookPayload  Json?
+  
+  // Relations
+  adSlot          AdSlot       @relation(fields: [adSlotId], references: [id], onDelete: Cascade)
+  
+  @@index([status])
+  @@index([transactionId])
+  @@index([createdAt])
 }
 
 model Wallet {
@@ -287,4 +471,145 @@ model Friendship {
   friend    User     @relation("FriendOf", fields: [friendId], references: [id], onDelete: Cascade)
   
   @@unique([userId, friendId])
+}
+
+// =====================================================
+// GAMIFICATION & LOYALTY MODELS
+// =====================================================
+
+model UserGamification {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  
+  // XP & Level
+  currentXp       Int      @default(0)
+  totalXp         Int      @default(0)
+  currentLevel    Int      @default(1)
+  
+  // Streaks
+  streakDays      Int      @default(0)
+  longestStreak  Int      @default(0)
+  lastActivityAt DateTime?
+  
+  // Statistics
+  totalReviews    Int      @default(0)
+  totalVisits     Int      @default(0)
+  totalCheckIns   Int      @default(0)
+  venuesVisited   String[] @default([]) // Array of venue IDs
+  
+  // Referral
+  referralCode    String   @unique
+  referredBy      String?
+  referralCount   Int      @default(0)
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([currentXp])
+  @@index([currentLevel])
+}
+
+// Badge/Achievement Types
+enum BadgeType {
+  MILESTONE    // First drink, city explorer, etc
+  ELITE        // Elite reviewer, VIP, etc
+  SEASONAL     // Holiday special badges
+  Hidden       // Secret/easter egg badges
+}
+
+model Badge {
+  id            String     @id @default(cuid())
+  code          String     @unique  // e.g., "FIRST_DRINK", "CITY_EXPLORER"
+  name          String
+  description   String
+  icon          String?    // Icon identifier
+  badgeType     BadgeType  @default(MILESTONE)
+  
+  // Requirements
+  requirementType String?  // REVIEW_COUNT, VISIT_COUNT, STREAK, etc
+  requirementValue Int?     // Number needed
+  
+  // Rewards
+  xpReward      Int        @default(0)
+  
+  // Display
+  tier          String     @default("bronze") // bronze, silver, gold, platinum
+  isHidden      Boolean    @default(false)
+  
+  createdAt     DateTime   @default(now())
+  
+  userBadges    UserBadge[]
+  
+  @@index([badgeType])
+  @@index([tier])
+}
+
+model UserBadge {
+  id          String   @id @default(cuid())
+  userId      String
+  badgeId     String
+  earnedAt    DateTime @default(now())
+  
+  user        UserGamification @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  badge       Badge   @relation(fields: [badgeId], references: [id])
+  
+  @@unique([userId, badgeId])
+  @@index([userId])
+}
+
+// Daily Missions
+enum MissionStatus {
+  AVAILABLE
+  IN_PROGRESS
+  COMPLETED
+  EXPIRED
+}
+
+model Mission {
+  id            String       @id @default(cuid())
+  code          String       @unique
+  name          String
+  description   String
+  
+  // Requirements
+  missionType    String       // CHECK_IN, REVIEW, VISIT_VENUE, etc
+  targetCount    Int          @default(1)
+  targetVenueCategory String?
+  
+  // Rewards
+  xpReward      Int          @default(10)
+  isDoubleXp    Boolean      @default(false)
+  
+  // Timing
+  isDaily       Boolean      @default(true)
+  isActive      Boolean      @default(true)
+  startDate     DateTime?
+  endDate       DateTime?
+  
+  createdAt     DateTime     @default(now())
+  
+  userMissions UserMission[]
+}
+
+model UserMission {
+  id          String       @id @default(cuid())
+  userId      String
+  missionId   String
+  
+  progress    Int          @default(0)
+  status      MissionStatus @default(AVAILABLE)
+  
+  startedAt   DateTime?
+  completedAt DateTime?
+  expiresAt   DateTime
+  
+  user        UserGamification @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  mission     Mission       @relation(fields: [missionId], references: [id])
+  
+  @@unique([userId, missionId])
+  @@index([userId])
+  @@index([status])
 }

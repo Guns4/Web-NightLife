@@ -2,12 +2,17 @@
  * =====================================================
  * IDENTITY SERVICE - AUTH UTILITIES
  * Password Hashing & JWT Token Management
+ * Now with RSA256 Asymmetric Encryption
  * =====================================================
  */
 
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
+import { getRSAKeys } from "./rsa-keys";
+
+// Get RSA keys for asymmetric JWT signing
+const { privateKey, publicKey } = getRSAKeys();
 
 // =====================================================
 // TYPES
@@ -106,9 +111,10 @@ export function generateAccessToken(user: AuthUser): string {
     role: user.role,
   };
 
-  return jwt.sign(payload, JWT_SECRET, {
+  return jwt.sign(payload, privateKey, {
     expiresIn: ACCESS_TOKEN_EXPIRY,
     issuer: "afterhoursid",
+    algorithm: "RS256",
   });
 }
 
@@ -118,9 +124,10 @@ export function generateAccessToken(user: AuthUser): string {
  * @returns JWT refresh token
  */
 export function generateRefreshToken(userId: string): string {
-  return jwt.sign({ userId, type: "refresh" }, JWT_REFRESH_SECRET, {
+  return jwt.sign({ userId, type: "refresh" }, privateKey, {
     expiresIn: REFRESH_TOKEN_EXPIRY,
     issuer: "afterhoursid",
+    algorithm: "RS256",
   });
 }
 
@@ -143,8 +150,9 @@ export function generateTokenPair(user: AuthUser): TokenPair {
  */
 export function verifyAccessToken(token: string): JWTPayload | null {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET, {
+    const decoded = jwt.verify(token, publicKey, {
       issuer: "afterhoursid",
+      algorithms: ["RS256"],
     }) as JWTPayload;
     return decoded;
   } catch (error) {
@@ -159,8 +167,9 @@ export function verifyAccessToken(token: string): JWTPayload | null {
  */
 export function verifyRefreshToken(token: string): { userId: string } | null {
   try {
-    const decoded = jwt.verify(token, JWT_REFRESH_SECRET, {
+    const decoded = jwt.verify(token, publicKey, {
       issuer: "afterhoursid",
+      algorithms: ["RS256"],
     }) as { userId: string; type: string };
     
     if (decoded.type !== "refresh") {
