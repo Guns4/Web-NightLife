@@ -69,16 +69,16 @@ export default function Footer() {
     <footer className="bg-dark-navy border-t border-white/10">
       {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           {/* Brand Column */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-1">
             <Link href="/" className="flex items-center gap-2 group mb-4">
               <div className="relative">
                 <Sparkles className="w-8 h-8 text-primary transition-transform duration-300 group-hover:scale-110" />
                 <div className="absolute inset-0 blur-lg bg-primary/30 group-hover:bg-primary/50 transition-colors" />
               </div>
-              <span className="font-syne font-bold text-2xl tracking-tight">
-                Night<span className="text-primary">Life</span>
+              <span className="font-syne font-bold text-2xl tracking-tight text-white drop-shadow-[0_0_10px_rgba(255,215,0,0.5)]">
+                After<span className="text-primary">Hours</span><span className="text-gold">ID</span>
               </span>
             </Link>
             <p className="text-white/60 text-sm leading-relaxed mb-6 max-w-sm">
@@ -127,6 +127,55 @@ export default function Footer() {
               </ul>
             </div>
           ))}
+
+          {/* Web3 Link - Fourth Column */}
+          <div>
+            <h3 className="font-syne font-semibold text-white mb-4">
+              Web3
+            </h3>
+            <ul className="space-y-3">
+              <li>
+                <Link
+                  href="/web3"
+                  className="text-white/60 text-sm hover:text-primary transition-colors"
+                >
+                  Coming Soon
+                </Link>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Trust Badges & Partner Logos */}
+        <div className="mt-12 pt-8 border-t border-white/10">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            {/* Security Badges */}
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2 text-white/40 text-xs">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
+                </svg>
+                <span>SSL Secured</span>
+              </div>
+              <div className="flex items-center gap-2 text-white/40 text-xs">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+                </svg>
+                <span>PCI Compliant</span>
+              </div>
+            </div>
+
+            {/* Partner Logos - Horizontal scroll on mobile */}
+            <div className="flex items-center gap-8 overflow-x-auto pb-2 md:pb-0">
+              <span className="text-white/40 text-xs whitespace-nowrap">Partners:</span>
+              <div className="flex items-center gap-6 grayscale opacity-50 hover:opacity-100 transition-opacity">
+                <span className="text-white/30 text-sm font-semibold">VENUE A</span>
+                <span className="text-white/30 text-sm font-semibold">CLUB B</span>
+                <span className="text-white/30 text-sm font-semibold">BAR C</span>
+                <span className="text-white/30 text-sm font-semibold">LOUNGE D</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Bottom Section */}

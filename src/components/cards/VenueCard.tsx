@@ -15,6 +15,24 @@ import {
 } from "@/lib/database/types";
 
 /**
+ * Increment PPC count for tracking
+ */
+async function incrementPpcCount(venueId?: string, promoId?: string) {
+  if (!venueId && !promoId) return;
+  
+  try {
+    await fetch('/api/ppc/increment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ venue_id: venueId, promo_id: promoId }),
+    });
+  } catch (err) {
+    // Silent fail - don't block user navigation
+    console.error('PPC increment failed:', err);
+  }
+}
+
+/**
  * VenueCard Props
  */
 interface VenueCardProps {
@@ -53,6 +71,15 @@ export default function VenueCard({
     onFavoriteToggle?.(venue.id);
   };
 
+  // Handle click with PPC tracking
+  const handleClick = async () => {
+    // Track PPC if there's a promo
+    if (promo) {
+      await incrementPpcCount(venue.id, promo.id);
+    }
+    onClick?.();
+  };
+
   return (
     <motion.article
       layout
@@ -60,7 +87,7 @@ export default function VenueCard({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.3 }}
-      onClick={onClick}
+      onClick={handleClick}
       className="group relative bg-white/5 backdrop-blur-xl rounded-2xl overflow-hidden border border-white/10 cursor-pointer hover:border-[#C026D3]/50 transition-all duration-300 hover:shadow-[0_0_40px_rgba(192,38,211,0.2)]"
       style={{ aspectRatio: '4 / 5' }}
     >

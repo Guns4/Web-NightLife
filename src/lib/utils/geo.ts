@@ -1,60 +1,38 @@
 /**
- * Geolocation Utility Functions
- */
-
-/**
- * Calculate distance between two coordinates using Haversine formula
+ * Menghitung jarak antara dua koordinat dalam meter menggunakan Haversine Formula.
  */
 export function calculateDistance(
-  lat1: number,
-  lon1: number,
-  lat2: number,
+  lat1: number, 
+  lon1: number, 
+  lat2: number, 
   lon2: number
 ): number {
-  const R = 6371; // Earth's radius in km
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) *
-      Math.cos(toRad(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
+  const R = 6371e3; // Jari-jari Bumi dalam meter
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
 
-function toRad(deg: number): number {
-  return deg * (Math.PI / 180);
-}
-
-/**
- * Format distance for display
- */
-export function formatDistance(distanceKm: number): string {
-  if (distanceKm < 1) {
-    return `${Math.round(distanceKm * 1000)} m`;
-  }
-  return `${distanceKm.toFixed(1)} km`;
-}
-
-/**
- * Parse coordinates from geography point
- */
-export function parseCoordinates(coordinates: unknown): { lat: number; lng: number } | null {
-  if (!coordinates || typeof coordinates !== 'string') return null;
+  const a = 
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
   
-  try {
-    // PostGIS geography POINT format: POINT(lng lat)
-    const match = coordinates.match(/POINT\((\S+) (\S+)\)/);
-    if (match) {
-      return {
-        lng: parseFloat(match[1]),
-        lat: parseFloat(match[2])
-      };
-    }
-  } catch (e) {
-    console.error("Error parsing coordinates:", e);
-  }
-  return null;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  const distance = R * c; // Hasil dalam meter
+  return distance;
+}
+
+/**
+ * Validasi apakah tamu berada dalam radius yang ditentukan (misal 100 meter)
+ */
+export function isWithinVenueRadius(
+  userLat: number, 
+  userLon: number, 
+  venueLat: number, 
+  venueLon: number, 
+  radiusInMeters: number = 100
+): boolean {
+  const distance = calculateDistance(userLat, userLon, venueLat, venueLon);
+  return distance <= radiusInMeters;
 }

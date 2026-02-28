@@ -6,6 +6,24 @@ import { MapPin, Star, Sparkles } from "lucide-react";
 import { Venue, Promo, getPriceRangeDisplay, getCategoryLabel } from "@/lib/database/types";
 
 /**
+ * Increment PPC count for tracking
+ */
+async function incrementPpcCount(venueId?: string, promoId?: string) {
+  if (!venueId && !promoId) return;
+  
+  try {
+    await fetch('/api/ppc/increment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ venue_id: venueId, promo_id: promoId }),
+    });
+  } catch (err) {
+    // Silent fail - don't block user navigation
+    console.error('PPC increment failed:', err);
+  }
+}
+
+/**
  * ResultCard Props
  */
 interface ResultCardProps {
@@ -27,6 +45,15 @@ export default function ResultCard({ venue, promo, onClick }: ResultCardProps) {
     ? venue.images[0] 
     : "/images/placeholder-venue.jpg";
 
+  // Handle click with PPC tracking
+  const handleClick = async () => {
+    // Track PPC if there's a promo
+    if (promo) {
+      await incrementPpcCount(venue.id, promo.id);
+    }
+    onClick?.();
+  };
+
   return (
     <motion.article
       layout
@@ -34,7 +61,7 @@ export default function ResultCard({ venue, promo, onClick }: ResultCardProps) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.3 }}
-      onClick={onClick}
+      onClick={handleClick}
       className="group relative bg-white/5 backdrop-blur-md rounded-2xl overflow-hidden border border-white/10 cursor-pointer hover:border-white/20 transition-all duration-300 hover:shadow-[0_0_30px_rgba(192,38,211,0.15)]"
     >
       {/* Image Container with Blur Placeholder */}

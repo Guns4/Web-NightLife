@@ -25,24 +25,25 @@ const inter = Inter({
 });
 
 /**
- * Metadata for SEO
+ * Metadata for SEO - AfterHoursID
  */
 export const metadata: Metadata = {
-  title: "NightLife | Discover Premium Entertainment Venues",
-  description: "Find the best nightlife experiences - Karaoke, Clubs, Spas, KTV and more. Your ultimate guide to premium entertainment venues.",
-  keywords: ["nightlife", "entertainment", "karaoke", "clubs", "KTV", "spa", "venues", "night out"],
-  authors: [{ name: "NightLife Team" }],
+  title: "AfterHoursID | The Premier Intelligence-Driven Nightlife Protocol",
+  description: "Elevate your night. Verified squad bookings, AI-driven vibe discovery, and exclusive VIP access at your fingertips.",
+  keywords: ["nightlife", "entertainment", "karaoke", "clubs", "KTV", "spa", "venues", "night out", "after hours", "VIP", "booking"],
+  authors: [{ name: "AfterHoursID Team" }],
   openGraph: {
-    title: "NightLife | Discover Premium Entertainment Venues",
-    description: "Find the best nightlife experiences - Karaoke, Clubs, Spas, KTV and more.",
+    title: "AfterHoursID | The Premier Intelligence-Driven Nightlife Protocol",
+    description: "Elevate your night. Verified squad bookings, AI-driven vibe discovery, and exclusive VIP access at your fingertips.",
     type: "website",
     locale: "en_US",
-    siteName: "NightLife",
+    siteName: "AfterHoursID",
+    url: "https://afterhoursid.com",
   },
   twitter: {
     card: "summary_large_image",
-    title: "NightLife | Discover Premium Entertainment Venues",
-    description: "Find the best nightlife experiences - Karaoke, Clubs, Spas, KTV and more.",
+    title: "AfterHoursID | The Premier Intelligence-Driven Nightlife Protocol",
+    description: "Elevate your night. Verified squad bookings, AI-driven vibe discovery, and exclusive VIP access at your fingertips.",
   },
   robots: {
     index: true,
@@ -71,18 +72,18 @@ export default function RootLayout({
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "EntertainmentBusiness",
-    "name": "NightLife Indonesia",
-    "description": "Find the best nightlife experiences - Karaoke, Clubs, Spas, KTV and more. Your ultimate guide to premium entertainment venues in Indonesia.",
-    "url": "https://nightlife.id",
+    "name": "AfterHoursID",
+    "description": "Elevate your night. Verified squad bookings, AI-driven vibe discovery, and exclusive VIP access at your fingertips.",
+    "url": "https://afterhoursid.com",
     "areaServed": {
       "@type": "Country",
       "name": "Indonesia"
     },
     "serviceType": ["Karaoke", "Club", "Spa", "KTV", "Entertainment"],
-    "priceRange": "$$",
+    "priceRange": "$",
     "sameAs": [
-      "https://instagram.com/nightlifeid",
-      "https://twitter.com/nightlifeid"
+      "https://instagram.com/afterhoursid",
+      "https://twitter.com/afterhoursid"
     ]
   };
 

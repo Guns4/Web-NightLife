@@ -1,11 +1,11 @@
 {
-  "name": "NightLife Indonesia",
-  "short_name": "NightLife",
-  "description": "Discover and book the best nightlife venues in Indonesia",
+  "name": "AfterHoursID | The Premier Intelligence-Driven Nightlife Protocol",
+  "short_name": "AfterHoursID",
+  "description": "Elevate your night. Verified squad bookings, AI-driven vibe discovery, and exclusive VIP access at your fingertips.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0A0A0F",
-  "theme_color": "#C026D3",
+  "background_color": "#050505",
+  "theme_color": "#FFD700",
   "orientation": "portrait-primary",
   "icons": [
     {

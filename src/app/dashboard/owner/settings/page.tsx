@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { createClient } from "@supabase/supabase-js";
 import { 
   User, 
   Phone, 
@@ -11,8 +12,14 @@ import {
   CheckCircle, 
   Shield,
   Bell,
-  Lock
+  Lock,
+  Sparkles,
+  Loader2
 } from "lucide-react";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 /**
  * Settings Page
@@ -28,9 +35,35 @@ export default function SettingsPage() {
   });
 
   const [verified, setVerified] = useState(false);
+  const [isGeneratingArticle, setIsGeneratingArticle] = useState(false);
 
   const handleSave = () => {
     toast.success("Settings saved successfully!");
+  };
+
+  const handleGenerateArticle = async () => {
+    setIsGeneratingArticle(true);
+    try {
+      const response = await fetch('/api/cron/auto-article', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_CRON_SECRET || 'test_secret'}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Artikel berhasil dipublikasikan!');
+      } else {
+        toast.error(data.error || 'Gagal生成 artikel');
+      }
+    } catch (err) {
+      console.error('Error generating article:', err);
+      toast.error('Terjadi kesalahan saat生成 artikel');
+    } finally {
+      setIsGeneratingArticle(false);
+    }
   };
 
   return (
@@ -194,6 +227,51 @@ export default function SettingsPage() {
               </button>
             </div>
           ))}
+        </div>
+      </motion.div>
+
+      {/* AI Editorial - Weekly Article Generator */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+        className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden"
+      >
+        <div className="p-6 border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <Sparkles className="w-5 h-5 text-yellow-400" />
+            <h2 className="font-semibold text-white">AI Editorial Generator</h2>
+          </div>
+        </div>
+        
+        <div className="p-6 space-y-4">
+          <div className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/30">
+            <p className="text-sm text-yellow-200">
+              Generate a weekly trending article automatically. This will pull the top 5 venues and create a blog post in Indonesian.
+            </p>
+          </div>
+          
+          <button
+            onClick={handleGenerateArticle}
+            disabled={isGeneratingArticle}
+            className="w-full flex items-center justify-center gap-2 p-4 rounded-xl bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-500 hover:to-yellow-600 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            {isGeneratingArticle ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Generating Article...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-5 h-5" />
+                Generate Weekly Article
+              </>
+            )}
+          </button>
+          
+          <p className="text-xs text-white/40 text-center">
+            Next scheduled: Friday 9:00 AM (via Vercel Cron)
+          </p>
         </div>
       </motion.div>
 

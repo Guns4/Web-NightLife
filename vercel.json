@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/auto-article",
+      "schedule": "0 9 * * 5"
+    },
+    {
+      "path": "/api/cron/promo-scheduler",
+      "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/pricing-transition",
+      "schedule": "0 1 * * *"
+    }
+  ]
+}

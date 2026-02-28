@@ -379,11 +379,20 @@ export async function getVenuesNearMe(
         })
         .filter((v): v is VenueWithRelations => v !== null)
         .sort((a, b) => {
-          // Prioritize venues with promos
+          // First prioritize boosted venues
+          const aIsBoosted = (a as any).is_boosted === true || (a as any).is_boosted === 'true';
+          const bIsBoosted = (b as any).is_boosted === true || (b as any).is_boosted === 'true';
+          if (aIsBoosted && !bIsBoosted) return -1;
+          if (!aIsBoosted && bIsBoosted) return 1;
+          // Then prioritize venues with promos
           const aHasPromo = (a.promos?.length || 0) > 0;
           const bHasPromo = (b.promos?.length || 0) > 0;
           if (aHasPromo && !bHasPromo) return -1;
           if (!aHasPromo && bHasPromo) return 1;
+          // Then sort by rating (descending)
+          const aRating = a.average_rating || 0;
+          const bRating = b.average_rating || 0;
+          if (bRating !== aRating) return bRating - aRating;
           // Then sort by distance
           return (a.distance_km || Infinity) - (b.distance_km || Infinity);
         });

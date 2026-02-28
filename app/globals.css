@@ -1,17 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  /* Core colors - Dark theme by default */
-  --background: #000000;
+  /* Core colors - Dark theme by default (Pitch Black) */
+  --background: #050505;
   --foreground: #ffffff;
   
   /* Primary colors */
   --primary: #c026d3;
   --primary-dark: #9333ea;
   
+  /* Accent colors - Gold & Rose for AfterHoursID luxury vibe */
+  --gold: #ffffff;
+  --rose: #e11db6;
+  
   /* Background colors */
   --dark-navy: #020617;
-  --deep-black: #000000;
+  --deep-black: #050505;
   
   /* Glass effect colors */
   --glass-bg: rgba(255, 255, 255, 0.1);
@@ -24,6 +28,8 @@
   --color-foreground: var(--foreground);
   --color-primary: var(--primary);
   --color-primary-dark: var(--primary-dark);
+  --color-gold: var(--gold);
+  --color-rose: var(--rose);
   --color-dark-navy: var(--dark-navy);
   --color-deep-black: var(--deep-black);
   

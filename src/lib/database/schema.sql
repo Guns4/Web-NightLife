@@ -14,7 +14,10 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TYPE user_role AS ENUM ('guest', 'owner', 'admin');
 
 -- Venue categories
-CREATE TYPE venue_category AS ENUM ('club', 'karaoke', 'ktv', 'spa');
+CREATE TYPE venue_category AS ENUM ('club', 'karaoke', 'ktv', 'spa', 'wellness');
+
+-- Application status enum
+CREATE TYPE application_status AS ENUM ('pending', 'review', 'approved', 'rejected');
 
 -- ============================================================
 -- TABLE: profiles (Linked to Auth.Users)
@@ -50,6 +53,12 @@ CREATE TABLE venues (
     features TEXT[] DEFAULT '{}',
     images TEXT[] DEFAULT '{}',
     is_active BOOLEAN DEFAULT true,
+    -- Premium & Unit Economics columns
+    is_premium BOOLEAN DEFAULT false,
+    metadata JSONB DEFAULT '{}'::jsonb,
+    commission_rate FLOAT DEFAULT 0.10,
+    -- Price Index for transparency
+    price_index JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -61,6 +70,207 @@ CREATE INDEX idx_venues_price_range ON venues(price_range);
 CREATE INDEX idx_venues_rating ON venues(rating DESC);
 CREATE INDEX idx_venues_owner ON venues(owner_id);
 CREATE INDEX idx_venues_active ON venues(is_active) WHERE is_active = true;
+CREATE INDEX idx_venues_premium ON venues(is_premium) WHERE is_premium = true;
+CREATE INDEX idx_venues_metadata ON venues USING GIN(metadata);
+CREATE INDEX idx_venues_price_index ON venues USING GIN(price_index);
+
+-- ============================================================
+-- TABLE: price_index_audit (Audit Trail for Price Changes)
+-- ============================================================
+CREATE TABLE price_index_audit (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    venue_id UUID REFERENCES venues(id) ON DELETE CASCADE,
+    updated_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
+    old_price_index JSONB,
+    new_price_index JSONB,
+    change_reason TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Index for audit queries
+CREATE INDEX idx_price_index_audit_venue ON price_index_audit(venue_id);
+CREATE INDEX idx_price_index_audit_date ON price_index_audit(created_at DESC);
+
+-- ============================================================
+-- TABLE: analytics_finance (Unit Economics Tracking)
+-- ============================================================
+CREATE TABLE analytics_finance (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    period_start DATE NOT NULL,
+    period_end DATE NOT NULL,
+    ad_spend NUMERIC(15, 2) DEFAULT 0,
+    total_users INT DEFAULT 0,
+    revenue_ppc NUMERIC(15, 2) DEFAULT 0,
+    revenue_commissions NUMERIC(15, 2) DEFAULT 0,
+    total_revenue GENERATED ALWAYS AS (revenue_ppc + revenue_commissions) STORED,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(period_start, period_end)
+);
+
+-- Index for finance queries
+CREATE INDEX idx_analytics_finance_period ON analytics_finance(period_start, period_end);
+
+-- Enable RLS
+ALTER TABLE analytics_finance ENABLE ROW LEVEL SECURITY;
+
+-- Admins can manage finance data
+CREATE POLICY "Admins can manage analytics finance"
+    ON analytics_finance FOR ALL
+    USING (
+        EXISTS (
+            SELECT 1 FROM profiles
+            WHERE profiles.id = auth.uid()
+            AND profiles.role = 'admin'
+        )
+    );
+
+-- ============================================================
+-- TABLE: verification_logs (Mystery Audits)
+-- ============================================================
+CREATE TABLE verification_logs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    venue_id UUID REFERENCES venues(id) ON DELETE CASCADE,
+    audit_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    auditor_name TEXT,
+    auditor_notes TEXT,
+    overall_score INT CHECK (overall_score >= 1 AND overall_score <= 5),
+    checklist JSONB DEFAULT '{}'::jsonb,
+    photos TEXT[],
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Index for verification queries
+CREATE INDEX idx_verification_logs_venue ON verification_logs(venue_id);
+CREATE INDEX idx_verification_logs_date ON verification_logs(audit_date DESC);
+
+-- Enable RLS
+ALTER TABLE verification_logs ENABLE ROW LEVEL SECURITY;
+
+-- Admins can manage verification logs
+CREATE POLICY "Admins can manage verification logs"
+    ON verification_logs FOR ALL
+    USING (
+        EXISTS (
+            SELECT 1 FROM profiles
+            WHERE profiles.id = auth.uid()
+            AND profiles.role = 'admin'
+        )
+    );
+
+-- ============================================================
+-- TABLE: venue_views (Analytics Tracking)
+-- ============================================================
+CREATE TABLE venue_views (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    venue_id UUID REFERENCES venues(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+    user_agent TEXT,
+    ip_address TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Index for venue views
+CREATE INDEX idx_venue_views_venue ON venue_views(venue_id);
+CREATE INDEX idx_venue_views_created ON venue_views(created_at DESC);
+
+-- ============================================================
+-- TABLE: articles (AI Generated Editorial Content)
+-- ============================================================
+CREATE TABLE articles (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title TEXT NOT NULL,
+    slug TEXT UNIQUE NOT NULL,
+    excerpt TEXT,
+    content TEXT NOT NULL,
+    category TEXT DEFAULT 'Nightlife Guide',
+    author TEXT DEFAULT 'AfterHoursID Editorial',
+    featured_venues JSONB DEFAULT '[]'::jsonb,
+    meta_description TEXT,
+    keywords TEXT[],
+    featured_image_url TEXT,
+    status article_status DEFAULT 'draft',
+    publish_date TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Article status enum
+CREATE TYPE article_status AS ENUM ('draft', 'scheduled', 'published', 'archived');
+
+-- Index for articles
+CREATE INDEX idx_articles_status ON articles(status);
+CREATE INDEX idx_articles_publish_date ON articles(publish_date);
+CREATE INDEX idx_articles_slug ON articles(slug);
+
+-- Enable RLS
+ALTER TABLE articles ENABLE ROW LEVEL SECURITY;
+
+-- Public can read published articles
+CREATE POLICY "Published articles are viewable by everyone"
+    ON articles FOR SELECT
+    USING (status = 'published');
+
+-- Admins can manage articles
+CREATE POLICY "Admins can manage articles"
+    ON articles FOR ALL
+    USING (
+        EXISTS (
+            SELECT 1 FROM profiles
+            WHERE profiles.id = auth.uid()
+            AND profiles.role = 'admin'
+        )
+    );
+
+-- ============================================================
+-- TABLE: partner_applications (Venue Owner Onboarding/Lead Gen)
+-- ============================================================
+CREATE TABLE partner_applications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    venue_name TEXT NOT NULL,
+    city TEXT NOT NULL,
+    category venue_category NOT NULL,
+    owner_name TEXT NOT NULL,
+    whatsapp_number TEXT NOT NULL,
+    music_genre TEXT,
+    dress_code TEXT,
+    average_bottle_price NUMERIC(10, 2),
+    instagram_handle TEXT,
+    status application_status DEFAULT 'pending',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Application status enum
+CREATE TYPE application_status AS ENUM ('pending', 'review', 'approved', 'rejected');
+
+-- Index for filtering
+CREATE INDEX idx_partner_applications_status ON partner_applications(status);
+CREATE INDEX idx_partner_applications_city ON partner_applications(city);
+
+-- Enable RLS
+ALTER TABLE partner_applications ENABLE ROW LEVEL SECURITY;
+
+-- Public can submit applications
+CREATE POLICY "Anyone can submit partner applications"
+    ON partner_applications FOR INSERT
+    WITH CHECK (true);
+
+-- Public can read their own applications (for verification)
+CREATE POLICY "Applicants can view their own applications"
+    ON partner_applications FOR SELECT
+    USING (id = gen_random_uuid()); -- This would need auth context in real scenario
+
+-- Admins can manage all
+CREATE POLICY "Admins can manage partner applications"
+    ON partner_applications FOR ALL
+    USING (
+        EXISTS (
+            SELECT 1 FROM profiles
+            WHERE profiles.id = auth.uid()
+            AND profiles.role = 'admin'
+        )
+    );
 
 -- ============================================================
 -- TABLE: promos (Real-time Transparency)
@@ -94,6 +304,13 @@ CREATE TABLE vibe_checks (
     rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
     comment TEXT,
     tag_vibe TEXT[] DEFAULT '{}',
+    -- Verification & Transparency
+    receipt_image_url TEXT,
+    is_verified_purchase BOOLEAN DEFAULT false,
+    -- Proof of Presence (Geolocation verification)
+    user_latitude FLOAT,
+    user_longitude FLOAT,
+    is_verified_visit BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
