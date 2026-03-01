@@ -5,8 +5,8 @@
  * =====================================================
  */
 
-// Auth hooks
-export { useAuth, useAuthStore } from "@/lib/auth/store";
+// Auth hooks - use useAuthStore from store
+export { useAuthStore } from "@/lib/auth/store";
 
 // GPS hooks
 export { useGPS, useDistanceToVenue } from "@/lib/hooks/useGPS";
@@ -25,5 +25,8 @@ export {
   slideInRight,
 } from "@/lib/hooks/useScrollAnimation";
 
-// SWR hooks
-export { useVenues, useVenue, useNearbyVenues } from "@/lib/hooks/useSWR";
+// SWR hooks - using available exports
+export { useVenueSearch, useVenueDetail, useAutoRefresh } from "@/lib/hooks/useSWR";
+
+// Socket hooks
+export { useSocket, SocketProvider } from "@/lib/hooks/useSocket";

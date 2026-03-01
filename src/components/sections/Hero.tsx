@@ -36,18 +36,16 @@ const categories: Category[] = [
  */
 function VideoPlaceholder() {
   return (
-    <div className="absolute inset-0 bg-gradient-to-br from-purple-900/40 to-pink-900/40 animate-pulse" />
+    <div className="absolute inset-0 bg-gradient-to-br from-royal-purple/40 to-gold-premium/20 animate-pulse" />
   );
 }
 
 /**
- * Hero Section Component
+ * Hero Section Component - Gold Neon Futuristic Design
  * Features:
- * - Lazy-loaded video background (zero impact on TBT)
- * - Cloudinary integration with adaptive bitrate
- * - Low Quality Image Placeholder (LIP)
- * - Glassmorphism search bar with premium animations
- * - Category pills with staggered entry
+ * - Golden City Video background with 60% dark overlay
+ * - Shimmer effect for headline text
+ * - Magnetic CTA buttons with pulse animation
  */
 export default function Hero() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -59,21 +57,21 @@ export default function Hero() {
       <div className="absolute inset-0 z-0">
         <LazyVideoBackground />
         
-        {/* Complex Radial Gradient Overlay */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,transparent_0%,transparent_40%,rgba(192,38,211,0.08)_60%,rgba(192,38,211,0.15)_80%,rgba(0,0,0,0.95)_100%)]" />
+        {/* 60% Dark Overlay for Golden City Video */}
+        <div className="absolute inset-0 bg-black/60 z-10" />
+        
+        {/* Complex Radial Gradient Overlay with Gold/Purple tones */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,transparent_0%,transparent_40%,rgba(199,164,15,0.08)_60%,rgba(66,15,77,0.15)_80%,rgba(0,0,0,0.95)_100%)] z-20" />
         
         {/* Bottom black overlay for text contrast */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-        
-        {/* Additional dark overlay for better text readability */}
-        <div className="absolute inset-0 bg-black/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent z-30" />
       </div>
 
       {/* Content Container */}
-      <div className="relative z-10 flex flex-col items-center justify-center h-full px-4 sm:px-6 lg:px-8 pt-16 md:pt-20">
+      <div className="relative z-40 flex flex-col items-center justify-center h-full px-4 sm:px-6 lg:px-8 pt-16 md:pt-20">
         {/* Main Content */}
         <div className="text-center max-w-4xl mx-auto space-y-6 md:space-y-8">
-          {/* Heading */}
+          {/* Heading with Metallic Shimmer Effect */}
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -82,7 +80,7 @@ export default function Hero() {
           >
             Temukan Hiburan{" "}
             <span className="text-white">Malam</span>{" "}
-            <span className="gradient-text">Terbaik</span>{" "}
+            <span className="metallic-shine text-shimmer">Terbaik</span>{" "}
             <span className="text-white">anda</span>
           </motion.h1>
 
@@ -91,7 +89,7 @@ export default function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="font-inter font-normal text-base md:text-lg lg:text-xl text-white/80 max-w-[600px] mx-auto leading-relaxed"
+            className="font-inter font-normal text-base md:text-lg lg:text-xl text-white/80 max-w-[600px] mx-auto leading-relaxed tracking-wide"
           >
             Booking Tempat Karaoke, Club, dan Spa favoritmu lebih mudah dan nikmati pengalaman malam yang tak terlupakan.
           </motion.p>
@@ -105,11 +103,11 @@ export default function Hero() {
           >
             <div className="relative group">
               {/* Glass effect container */}
-              <div className="absolute inset-0 bg-white/10 backdrop-blur-md rounded-full border border-white/20 transition-all duration-300 group-hover:bg-white/15 group-hover:border-white/30" />
+              <div className="absolute inset-0 bg-white/10 backdrop-blur-md rounded-full border border-gold-premium/20 transition-all duration-300 group-hover:bg-white/15 group-hover:border-gold-premium/30" />
               
               {/* Search input with icons */}
               <div className="relative flex items-center px-4 md:px-6 py-3 md:py-4">
-                <MapPin className="w-5 h-5 text-white/60 flex-shrink-0 ml-1" />
+                <MapPin className="w-5 h-5 text-gold-premium/60 flex-shrink-0 ml-1" />
                 <input
                   type="text"
                   value={searchQuery}
@@ -120,13 +118,13 @@ export default function Hero() {
                 <motion.button 
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="relative px-6 py-2.5 rounded-full bg-gradient-to-r from-[#C026D3] to-[#9333EA] text-white font-medium text-sm md:text-base overflow-hidden group-hover:shadow-[0_0_20px_rgba(192,38,211,0.3)] transition-shadow min-h-[48px] min-w-[80px]"
+                  className="relative px-6 py-2.5 rounded-full bg-gradient-gold-premium text-black font-medium text-sm md:text-base overflow-hidden group-hover:shadow-[0_0_20px_rgba(199,164,15,0.4)] transition-shadow min-h-[48px] min-w-[80px] btn-magnetic btn-haptic"
                 >
                   <span className="relative z-10 flex items-center gap-2">
                     <Search className="w-4 h-4" />
                     <span className="hidden sm:inline">Cari</span>
                   </span>
-                  <span className="absolute inset-0 rounded-full animate-ping bg-white/20" />
+                  <span className="absolute inset-0 rounded-full animate-ping bg-gold-premium/30" />
                 </motion.button>
               </div>
             </div>
@@ -155,8 +153,8 @@ export default function Hero() {
                     whileTap={{ scale: 0.98 }}
                     className={`relative px-3 py-2 sm:px-4 sm:py-2.5 rounded-full font-medium text-xs sm:text-sm transition-all duration-300 min-h-[44px] ${
                       isSelected
-                        ? "bg-gradient-to-r from-[#C026D3] to-[#9333EA] text-white shadow-[0_0_20px_rgba(192,38,211,0.3)]"
-                        : "bg-white/10 backdrop-blur-sm border border-white/20 text-white/90 hover:bg-white/20 hover:border-white/30"
+                        ? "bg-gradient-gold-premium text-black shadow-[0_0_20px_rgba(199,164,15,0.4)]"
+                        : "bg-white/10 backdrop-blur-sm border border-gold-premium/20 text-white/90 hover:bg-white/20 hover:border-gold-premium/30"
                     }`}
                   >
                     <span className="flex items-center justify-center gap-2">

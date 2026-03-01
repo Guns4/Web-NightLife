@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
-import crypto from 'crypto';
-
-const prisma = new PrismaClient();
+import crypto from 'node:crypto';
+import prisma from '@/lib/auth/prisma-client';
 
 interface MidtransConfig {
   serverKey: string;

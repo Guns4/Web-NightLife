@@ -6,7 +6,7 @@
  */
 
 import { prisma } from "@/lib/auth/prisma-client";
-import { getMongoDB } from "@/lib/services/promo/mongo-promo-service";
+import { getDb, getMongoDB } from "@/lib/services/promo/mongo-promo-service";
 import { getIO } from "@/lib/services/notifications/socket-service";
 
 // =====================================================
@@ -86,9 +86,9 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
   // MongoDB promos
   let totalPromos = 0;
   try {
-    const mongo = await getMongoDB();
-    if (mongo) {
-      totalPromos = await mongo.collection("promos").countDocuments({
+    const db = await getDb();
+    if (db) {
+      totalPromos = await db.collection("promos").countDocuments({
         isActive: true,
         endDate: { $gte: new Date() },
       });
@@ -224,10 +224,10 @@ export async function getUserTrends(): Promise<UserTrend[]> {
  */
 export async function getAdPerformance(): Promise<AdPerformance[]> {
   try {
-    const mongo = await getMongoDB();
-    if (!mongo) return [];
+    const db = await getDb();
+    if (!db) return [];
 
-    const promos = await mongo
+    const promos = await db
       .collection("promos")
       .find({
         isActive: true,
@@ -241,7 +241,7 @@ export async function getAdPerformance(): Promise<AdPerformance[]> {
       .limit(10)
       .toArray();
 
-    return promos.map((p) => ({
+    return promos.map((p: any) => ({
       promoId: p._id?.toString() || "",
       title: p.title || "Untitled",
       impressions: p.impressions || 0,

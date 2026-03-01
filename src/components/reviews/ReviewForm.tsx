@@ -14,8 +14,11 @@ import { createReview } from '@/lib/actions/review.actions';
 
 interface ReviewFormProps {
   venueId: string;
-  userId: string;
-  userName: string;
+  userId?: string;
+  userName?: string;
+  venueLat?: number;
+  venueLon?: number;
+  onReviewSubmitted?: (reviewData: any) => void;
   onSuccess?: () => void;
   onCancel?: () => void;
 }
@@ -28,8 +31,11 @@ const steps = [
 
 export default function ReviewForm({ 
   venueId, 
-  userId, 
-  userName, 
+  userId = 'anonymous',
+  userName = 'Guest User', 
+  venueLat,
+  venueLon,
+  onReviewSubmitted,
   onSuccess, 
   onCancel 
 }: ReviewFormProps) {
@@ -122,6 +128,12 @@ export default function ReviewForm({
       
       if (result.success) {
         setSubmitted(true);
+        onReviewSubmitted?.({
+          rating,
+          comment: content,
+          isVerified: !!receiptImage,
+          isAIVerified: false,
+        });
         onSuccess?.();
       } else {
         setError(result.error || 'Failed to submit review');
@@ -347,7 +359,7 @@ export default function ReviewForm({
                       </label>
                     </p>
                     <p className="text-xs text-slate-500 mt-2">
-                      We verify receipt date (&lt; 24h) and location match
+                      {'We verify receipt date (< 24h) and location match'}
                     </p>
                   </>
                 )}

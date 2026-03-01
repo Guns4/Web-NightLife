@@ -22,7 +22,7 @@ interface Venue {
   images?: string[] | null;
   is_verified?: boolean;
   rating?: number | null;
-  price_range?: string | null;
+  price_range?: string | number | null;
   features?: string[] | null;
   musicGenres?: string[] | null;
   vibes?: string[] | null;
@@ -36,7 +36,7 @@ interface Promo {
 }
 
 interface LiveVibe {
-  status: "quiet" | "busy" | "packed" | "moderate";
+  status: "quiet" | "crowded" | "full";
 }
 
 interface VenueCardProps {
@@ -46,13 +46,24 @@ interface VenueCardProps {
   distanceKm?: number | null;
   isFavorite?: boolean;
   onFavoriteToggle?: (venueId: string) => void;
+  onClick?: () => void;
 }
 
 /**
  * Get price range display
  */
-function getPriceRangeDisplay(priceRange?: string | null): string {
+function getPriceRangeDisplay(priceRange?: string | number | null): string {
   if (!priceRange) return "Price TBD";
+  
+  // Handle numeric price ranges
+  if (typeof priceRange === 'number') {
+    if (priceRange === 1) return "Rp 50K-150K";
+    if (priceRange === 2) return "Rp 150K-350K";
+    if (priceRange === 3) return "Rp 350K-750K";
+    if (priceRange === 4) return "Rp 750K+";
+    return `Rp ${priceRange * 100}K`;
+  }
+  
   switch (priceRange) {
     case "low": return "Rp 50K-150K";
     case "medium": return "Rp 150K-350K";
@@ -116,6 +127,7 @@ export default function VenueCard({
   distanceKm,
   isFavorite = false,
   onFavoriteToggle,
+  onClick,
 }: VenueCardProps) {
   const [favorite, setFavorite] = useState(isFavorite);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -142,13 +154,13 @@ export default function VenueCard({
         exit={{ opacity: 0, scale: 0.95 }}
         transition={{ duration: 0.3 }}
         whileHover={{ scale: 1.02 }}
-        className="group relative bg-black/10 backdrop-blur-xl rounded-2xl overflow-hidden border border-[#FFD700]/30 cursor-pointer hover:border-[#FFD700] hover:shadow-[0_0_40px_rgba(255,215,0,0.3)] transition-all duration-300"
+        className="group relative bg-royal-purple/30 backdrop-blur-xl rounded-2xl overflow-hidden border border-gold-premium/30 cursor-pointer hover:border-cyber-cyan/50 transition-all duration-300 card-lift-cyan-glow"
         style={{ aspectRatio: '4 / 5' }}
       >
         {/* Image Container */}
         <div className="relative h-[55%] overflow-hidden">
           {/* Blur placeholder */}
-          <div className={`absolute inset-0 bg-gradient-to-br from-[#FFD700]/20 to-[#D4AF37]/20 transition-opacity duration-500 ${imageLoaded ? 'opacity-0' : 'opacity-100'} z-0`} />
+          <div className={`absolute inset-0 bg-gradient-to-br from-gold-premium/20 to-gold-premium-dark/20 transition-opacity duration-500 ${imageLoaded ? 'opacity-0' : 'opacity-100'} z-0`} />
           
           {/* Image */}
           <Image
@@ -167,11 +179,11 @@ export default function VenueCard({
           <div className="absolute top-3 left-3 right-3 z-30 flex items-center justify-between">
             {/* Category + Verified Badge */}
             <div className="flex items-center gap-2">
-              <span className="px-3 py-1.5 text-xs font-semibold bg-black/50 backdrop-blur-md rounded-full text-white border border-[#FFD700]/20 tracking-wide">
+              <span className="px-3 py-1.5 text-xs font-semibold bg-black/50 backdrop-blur-md rounded-full text-white border border-gold-premium/20 tracking-wide">
                 {categoryLabel}
               </span>
               {venue.is_verified && (
-                <span className="px-2 py-1 text-xs font-medium bg-[#FFD700]/20 backdrop-blur-md rounded-full text-[#FFD700] flex items-center gap-1 border border-[#FFD700]/30">
+                <span className="px-2 py-1 text-xs font-medium bg-gold-premium/20 backdrop-blur-md rounded-full text-gold-premium flex items-center gap-1 border border-gold-premium/30">
                   <CheckCircle className="w-3 h-3" />
                   Verified
                 </span>
@@ -182,7 +194,7 @@ export default function VenueCard({
             <motion.button
               whileTap={{ scale: 0.8 }}
               onClick={handleFavoriteClick}
-              className="p-2.5 rounded-full bg-black/40 backdrop-blur-md border border-[#FFD700]/20 hover:bg-black/60 transition-colors"
+              className="p-2.5 rounded-full bg-black/40 backdrop-blur-md border border-gold-premium/20 hover:bg-black/60 hover:border-cyber-cyan/30 transition-colors btn-haptic"
               aria-label={favorite ? "Remove from favorites" : "Add to favorites"}
             >
               <motion.div
@@ -199,7 +211,7 @@ export default function VenueCard({
           {/* Live Status Badge */}
           {liveVibe && liveVibe.status !== 'quiet' && (
             <div className="absolute top-[4.5rem] right-3 z-30">
-              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-full border border-[#FFD700]/20">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-full border border-gold-premium/20">
                 <span className={`w-2 h-2 rounded-full ${getLiveStatusColor(liveVibe.status)} animate-pulse`} />
                 <span className="text-xs font-medium text-white">
                   {getLiveStatusLabel(liveVibe.status)}
@@ -217,10 +229,10 @@ export default function VenueCard({
                 exit={{ opacity: 0, y: -20 }}
                 className="absolute bottom-3 left-3 right-3 z-30"
               >
-                <div className="relative px-4 py-2.5 bg-gradient-to-r from-[#FFD700] to-[#D4AF37] rounded-xl overflow-hidden shadow-lg">
+                <div className="relative px-4 py-2.5 bg-gradient-to-r from-gold-premium to-gold-premium-light rounded-xl overflow-hidden shadow-lg">
                   {/* Shimmer effect */}
                   <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
                     animate={{ x: ['-100%', '100%'] }}
                     transition={{ 
                       duration: 2, 
@@ -251,7 +263,7 @@ export default function VenueCard({
         <div className="h-[45%] p-4 flex flex-col justify-between">
           <div className="space-y-2">
             {/* Title */}
-            <h3 className="font-syne font-bold text-lg text-white leading-tight line-clamp-1 group-hover:text-[#FFD700] transition-colors tracking-[-0.03em]">
+            <h3 className="font-syne font-bold text-lg text-white leading-tight line-clamp-1 group-hover:text-gold-premium transition-colors tracking-[-0.03em]">
               {venue.name}
             </h3>
 
@@ -268,12 +280,12 @@ export default function VenueCard({
             {(venue.musicGenres || venue.vibes) && (
               <div className="flex flex-wrap gap-1">
                 {venue.musicGenres?.slice(0, 2).map((genre, i) => (
-                  <span key={i} className="px-2 py-0.5 text-xs bg-[#FFD700]/10 border border-[#FFD700]/20 rounded-full text-[#FFD700]">
+                  <span key={i} className="px-2 py-0.5 text-xs bg-gold-premium/10 border border-gold-premium/20 rounded-full text-gold-premium">
                     {genre}
                   </span>
                 ))}
                 {venue.vibes?.slice(0, 2).map((vibe, i) => (
-                  <span key={i} className="px-2 py-0.5 text-xs bg-purple-500/10 border border-purple-500/20 rounded-full text-purple-400">
+                  <span key={i} className="px-2 py-0.5 text-xs bg-royal-purple/30 border border-cyber-cyan/20 rounded-full text-cyber-cyan">
                     {vibe}
                   </span>
                 ))}
@@ -287,9 +299,9 @@ export default function VenueCard({
             <div className="flex items-center gap-3">
               {/* Trust Score Badge */}
               {venue.trustScore !== undefined && (
-                <div className="flex items-center gap-1 px-2 py-1 bg-[#FFD700]/10 border border-[#FFD700]/30 rounded-full">
-                  <ShieldCheck className="w-3.5 h-3.5 text-[#FFD700]" />
-                  <span className="text-xs font-bold text-[#FFD700]">
+                <div className="flex items-center gap-1 px-2 py-1 bg-gold-premium/10 border border-gold-premium/30 rounded-full">
+                  <ShieldCheck className="w-3.5 h-3.5 text-gold-premium" />
+                  <span className="text-xs font-bold text-gold-premium">
                     {venue.trustScore.toFixed(0)}%
                   </span>
                 </div>
@@ -312,7 +324,7 @@ export default function VenueCard({
               </span>
               {venue.rating && venue.rating > 0 && (
                 <div className="hidden md:flex items-center gap-1">
-                  <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                  <Star className="w-4 h-4 text-gold-premium fill-gold-premium" />
                   <span className="text-sm font-medium text-white/80">
                     {venue.rating.toFixed(1)}
                   </span>
@@ -322,9 +334,9 @@ export default function VenueCard({
           </div>
         </div>
 
-        {/* Hover Border Glow */}
+        {/* Hover Border Glow - Intensifies to Cyan */}
         <div className="absolute inset-0 rounded-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-[#FFD700]/50" />
+          <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-cyber-cyan/50 shadow-[0_0_20px_rgba(163,204,197,0.3)]" />
         </div>
       </motion.article>
     </Link>

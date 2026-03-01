@@ -59,9 +59,9 @@ export async function createAuditLog(entry: Omit<AuditLogEntry, 'id' | 'timestam
         action: entry.action,
         userId: entry.userId,
         userEmail: entry.userEmail,
-        targetType: entry.targetType,
-        targetId: entry.targetId,
-        details: JSON.stringify(entry.details),
+        resource: entry.targetType,
+        resourceId: entry.targetId,
+        details: entry.details,
         ipAddress: entry.ipAddress,
         userAgent: entry.userAgent,
       },
@@ -209,16 +209,16 @@ export async function getAuditLogs(options?: {
   const total = await prisma.systemAuditLog.count({ where });
 
   return {
-    logs: logs.map((log: AuditLogRecord) => ({
+    logs: logs.map((log) => ({
       id: log.id,
       action: log.action,
-      userId: log.userId,
-      userEmail: log.userEmail,
-      targetType: log.targetType,
-      targetId: log.targetId,
-      details: JSON.parse(log.details as string || '{}'),
-      ipAddress: log.ipAddress,
-      userAgent: log.userAgent,
+      userId: log.userId || '',
+      userEmail: log.userEmail || '',
+      targetType: log.targetType || log.resource,
+      targetId: log.resourceId || '',
+      details: typeof log.details === 'string' ? JSON.parse(log.details) : (log.details || {}),
+      ipAddress: log.ipAddress || '',
+      userAgent: log.userAgent || '',
       createdAt: log.createdAt,
       updatedAt: log.updatedAt,
     })),

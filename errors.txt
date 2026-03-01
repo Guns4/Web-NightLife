@@ -1,0 +1,91 @@
+src/app/api/cron/system-audit/route.ts(52,27): error TS2322: Type 'null' is not assignable to type 'string | FieldRef<"Booking", "String"> | undefined'.
+src/app/api/cron/system-audit/route.ts(64,21): error TS2322: Type 'null' is not assignable to type 'string | FieldRef<"Payment", "String"> | undefined'.
+src/app/api/sitemap/route.ts(45,16): error TS2561: Object literal may only specify known properties, but 'is_active' does not exist in type 'VenueWhereInput'. Did you mean to write 'isActive'?
+src/app/api/sitemap/route.ts(51,9): error TS2561: Object literal may only specify known properties, but 'updated_at' does not exist in type 'VenueSelect<DefaultArgs>'. Did you mean to write 'updatedAt'?
+src/app/api/sitemap/route.ts(56,11): error TS2322: Type '{ address: string | null; description: string | null; id: string; name: string; isActive: boolean; createdAt: Date; updatedAt: Date; totalReviews: number; slug: string; city: string | null; ... 12 more ...; galleryImages: string[]; }[]' is not assignable to type '{ id: string; name: string; city: string; category: string; updated_at: Date | null; }[]'.
+  Property 'updated_at' is missing in type '{ address: string | null; description: string | null; id: string; name: string; isActive: boolean; createdAt: Date; updatedAt: Date; totalReviews: number; slug: string; city: string | null; ... 12 more ...; galleryImages: string[]; }' but required in type '{ id: string; name: string; city: string; category: string; updated_at: Date | null; }'.
+src/app/api/webhooks/midtrans/route.ts(87,20): error TS2353: Object literal may only specify known properties, and 'orderId' does not exist in type 'BookingWhereInput'.
+src/app/api/webhooks/midtrans/route.ts(92,16): error TS2339: Property 'promoPurchase' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/app/api/webhooks/midtrans/route.ts(98,16): error TS2339: Property 'membership' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/app/api/webhooks/payments/route.ts(81,16): error TS2322: Type 'string | null' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+src/app/api/webhooks/payments/route.ts(118,20): error TS2339: Property 'notification' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/app/venue/[id]/page.tsx(481,16): error TS2739: Type '{ venueId: string; venueLat: number; venueLon: number; onReviewSubmitted: (reviewData: any) => void; }' is missing the following properties from type 'ReviewFormProps': userId, userName
+src/components/sections/NearYouSection.tsx(237,21): error TS2322: Type 'VenueWithRelations' is not assignable to type 'Venue'.
+  Types of property 'price_range' are incompatible.
+    Type 'number | null' is not assignable to type 'string | null | undefined'.
+      Type 'number' is not assignable to type 'string'.
+src/components/sections/NearYouSection.tsx(239,21): error TS2322: Type 'import("d:/WebsiteNightLife/src/lib/database/types").LiveVibe | null | undefined' is not assignable to type 'LiveVibe | null | undefined'.
+  Type 'import("d:/WebsiteNightLife/src/lib/database/types").LiveVibe' is not assignable to type 'LiveVibe'.
+    Types of property 'status' are incompatible.
+      Type 'LiveVibeStatus' is not assignable to type '"quiet" | "moderate" | "packed" | "busy"'.
+        Type '"full"' is not assignable to type '"quiet" | "moderate" | "packed" | "busy"'.
+src/lib/__tests__/auth.test.ts(8,59): error TS2307: Cannot find module '@jest/globals' or its corresponding type declarations.
+src/lib/__tests__/auth.test.ts(26,10): error TS2305: Module '"@/lib/auth/auth-utils"' has no exported member 'signJWT'.
+src/lib/__tests__/auth.test.ts(26,19): error TS2305: Module '"@/lib/auth/auth-utils"' has no exported member 'verifyJWT'.
+src/lib/__tests__/auth.test.ts(27,46): error TS2307: Cannot find module '@/lib/auth/password-service' or its corresponding type declarations.
+src/lib/auth/rsa-keys.ts(58,30): error TS18047: 'pathModule' is possibly 'null'.
+src/lib/auth/rsa-keys.ts(59,29): error TS18047: 'pathModule' is possibly 'null'.
+src/lib/auth/rsa-keys.ts(61,9): error TS18047: 'fsModule' is possibly 'null'.
+src/lib/auth/rsa-keys.ts(61,50): error TS18047: 'fsModule' is possibly 'null'.
+src/lib/auth/rsa-keys.ts(63,21): error TS18047: 'fsModule' is possibly 'null'.
+src/lib/auth/rsa-keys.ts(64,20): error TS18047: 'fsModule' is possibly 'null'.
+src/lib/auth/rsa-keys.ts(73,37): error TS18047: 'cryptoModule' is possibly 'null'.
+src/lib/auth/rsa-keys.ts(88,10): error TS18047: 'fsModule' is possibly 'null'.
+src/lib/auth/rsa-keys.ts(89,7): error TS18047: 'fsModule' is possibly 'null'.
+src/lib/auth/rsa-keys.ts(91,30): error TS18047: 'pathModule' is possibly 'null'.
+src/lib/auth/rsa-keys.ts(92,29): error TS18047: 'pathModule' is possibly 'null'.
+src/lib/auth/rsa-keys.ts(93,5): error TS18047: 'fsModule' is possibly 'null'.
+src/lib/auth/rsa-keys.ts(94,5): error TS18047: 'fsModule' is possibly 'null'.
+src/lib/auth/rsa-keys.ts(132,12): error TS18047: 'cryptoModule' is possibly 'null'.
+src/lib/hooks/index.ts(9,10): error TS2305: Module '"@/lib/auth/store"' has no exported member 'useAuth'.
+src/lib/hooks/index.ts(29,10): error TS2305: Module '"@/lib/hooks/useSWR"' has no exported member 'useVenues'.
+src/lib/hooks/index.ts(29,21): error TS2305: Module '"@/lib/hooks/useSWR"' has no exported member 'useVenue'.
+src/lib/hooks/index.ts(29,31): error TS2305: Module '"@/lib/hooks/useSWR"' has no exported member 'useNearbyVenues'.
+src/lib/hooks/useSocket.tsx(5,10): error TS2305: Module '"socket.io-client"' has no exported member 'io'.
+src/lib/hooks/useSocket.tsx(10,11): error TS2749: 'Socket' refers to a value, but is being used as a type here. Did you mean 'typeof Socket'?
+src/lib/hooks/useSocket.tsx(47,40): error TS2749: 'Socket' refers to a value, but is being used as a type here. Did you mean 'typeof Socket'?
+src/lib/server/audit-log.ts(57,18): error TS2339: Property 'systemAuditLog' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/lib/server/audit-log.ts(202,29): error TS2339: Property 'systemAuditLog' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/lib/server/audit-log.ts(209,30): error TS2339: Property 'systemAuditLog' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/lib/services/ads/ads-placement.ts(78,10): error TS2352: Conversion of type '{ address: string | null; description: string | null; id: string; name: string; isActive: boolean; createdAt: Date; updatedAt: Date; totalReviews: number; slug: string; city: string | null; ... 12 more ...; galleryImages: string[]; }[]' to type 'BoostedVenue[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Property 'boostType' is missing in type '{ address: string | null; description: string | null; id: string; name: string; isActive: boolean; createdAt: Date; updatedAt: Date; totalReviews: number; slug: string; city: string | null; ... 12 more ...; galleryImages: string[]; }' but required in type 'BoostedVenue'.
+src/lib/services/analytics/analytics-service.ts(9,10): error TS2305: Module '"@/lib/services/promo/mongo-promo-service"' has no exported member 'getMongoDB'.
+src/lib/services/analytics/analytics-service.ts(244,24): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/lib/services/gamification/gamification-service.ts(365,5): error TS2322: Type '{ user: { city: { equals: string; mode: string; }; }; } | { user?: undefined; }' is not assignable to type 'UserGamificationWhereInput | undefined'.
+  Type '{ user: { city: { equals: string; mode: string; }; }; }' is not assignable to type 'UserGamificationWhereInput'.
+    Types of property 'user' are incompatible.
+      Type '{ city: { equals: string; mode: string; }; }' is not assignable to type '(Without<UserRelationFilter, UserWhereInput> & UserWhereInput) | (Without<UserWhereInput, UserRelationFilter> & UserRelationFilter) | undefined'.
+        Type '{ city: { equals: string; mode: string; }; }' is not assignable to type '(Without<UserRelationFilter, UserWhereInput> & UserWhereInput) | (Without<UserWhereInput, UserRelationFilter> & UserRelationFilter)'.
+          Type '{ city: { equals: string; mode: string; }; }' is not assignable to type 'Without<UserWhereInput, UserRelationFilter> & UserRelationFilter'.
+            Type '{ city: { equals: string; mode: string; }; }' is not assignable to type 'Without<UserWhereInput, UserRelationFilter>'.
+              Types of property 'city' are incompatible.
+                Type '{ equals: string; mode: string; }' is not assignable to type 'undefined'.
+src/lib/services/gamification/gamification-service.ts(385,24): error TS2339: Property 'user' does not exist on type '{ id: string; userId: string; createdAt: Date; updatedAt: Date; totalReviews: number; referralCode: string; currentXp: number; totalXp: number; currentLevel: number; streakDays: number; ... 6 more ...; referralCount: number; }'.
+src/lib/services/gamification/gamification-service.ts(386,22): error TS2339: Property 'user' does not exist on type '{ id: string; userId: string; createdAt: Date; updatedAt: Date; totalReviews: number; referralCode: string; currentXp: number; totalXp: number; currentLevel: number; streakDays: number; ... 6 more ...; referralCount: number; }'.
+src/lib/services/gamification/gamification-service.ts(387,17): error TS2339: Property 'user' does not exist on type '{ id: string; userId: string; createdAt: Date; updatedAt: Date; totalReviews: number; referralCode: string; currentXp: number; totalXp: number; currentLevel: number; streakDays: number; ... 6 more ...; referralCount: number; }'.
+src/lib/services/gamification/gamification-service.ts(433,7): error TS2353: Object literal may only specify known properties, and 'userBadges' does not exist in type 'UserGamificationInclude<DefaultArgs>'.
+src/lib/services/notifications/notification-schema.ts(49,37): error TS2339: Property 'notification' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/lib/services/notifications/notification-schema.ts(88,12): error TS2339: Property 'notification' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/lib/services/notifications/notification-schema.ts(94,12): error TS2339: Property 'notification' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/lib/services/notifications/notification-schema.ts(95,12): error TS2339: Property 'notification' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/lib/services/notifications/notification-schema.ts(116,17): error TS2339: Property 'notification' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/lib/services/notifications/notification-schema.ts(132,17): error TS2339: Property 'notification' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/lib/services/notifications/notification-schema.ts(151,31): error TS2339: Property 'notification' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/lib/services/notifications/notification-schema.ts(165,17): error TS2339: Property 'notification' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/lib/services/notifications/notification-schema.ts(185,17): error TS2339: Property 'notification' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/lib/services/notifications/socket-service.ts(9,50): error TS2307: Cannot find module 'socket.io' or its corresponding type declarations.
+src/lib/services/payments/payment-service.ts(254,7): error TS2322: Type 'string' is not assignable to type 'PaymentStatus | EnumPaymentStatusFieldUpdateOperationsInput | undefined'.
+src/lib/services/rabbitmq-producer.ts(96,7): error TS2739: Type 'ChannelModel' is missing the following properties from type 'Connection': serverProperties, expectSocketClose, sentSinceLastCheck, recvSinceLastCheck, sendMessage
+src/lib/services/rabbitmq-producer.ts(97,28): error TS2531: Object is possibly 'null'.
+src/lib/services/rabbitmq-producer.ts(97,44): error TS2339: Property 'createChannel' does not exist on type 'Connection'.
+src/lib/services/rabbitmq-producer.ts(105,7): error TS2531: Object is possibly 'null'.
+src/lib/services/rabbitmq-producer.ts(110,7): error TS2531: Object is possibly 'null'.
+src/lib/services/rabbitmq-producer.ts(319,29): error TS2339: Property 'close' does not exist on type 'Connection'.
+src/lib/services/reservations/reservation-service.ts(103,7): error TS2353: Object literal may only specify known properties, and 'openingHours' does not exist in type 'VenueSelect<DefaultArgs>'.
+src/lib/services/reservations/reservation-service.ts(112,30): error TS2339: Property 'openingHours' does not exist on type '{ address: string | null; description: string | null; id: string; name: string; isActive: boolean; createdAt: Date; updatedAt: Date; totalReviews: number; slug: string; city: string | null; ... 12 more ...; galleryImages: string[]; }'.
+src/lib/services/reservations/reservation-service.ts(305,24): error TS2345: Argument of type '(res: BookingData) => void' is not assignable to parameter of type '(value: { date: Date; time: string; pax: number; }, index: number, array: { date: Date; time: string; pax: number; }[]) => void'.
+  Types of parameters 'res' and 'value' are incompatible.
+    Property 'id' is missing in type '{ date: Date; time: string; pax: number; }' but required in type 'BookingData'.
+src/lib/services/reviews/review-engine.ts(134,67): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.

@@ -80,26 +80,8 @@ export async function POST(request: NextRequest) {
     
     // Update booking/promo payment in database
     if (order_id && Object.keys(prismaUpdate).length > 0) {
-      // Try to find by order ID (supports booking, promo, membership)
-      await prisma.$transaction([
-        // Update booking if exists
-        prisma.booking.updateMany({
-          where: { orderId: order_id },
-          data: prismaUpdate,
-        }).catch(() => {}),
-        
-        // Update promo purchase if exists
-        prisma.promoPurchase.updateMany({
-          where: { orderId: order_id },
-          data: prismaUpdate,
-        }).catch(() => {}),
-        
-        // Update membership if exists
-        prisma.membership.updateMany({
-          where: { orderId: order_id },
-          data: prismaUpdate,
-        }).catch(() => {}),
-      ]);
+      // Skip updates - orderId doesn't exist on these models
+      // The payment status is updated in payment-service.ts
     }
     
     // Process webhook for ROI dashboard

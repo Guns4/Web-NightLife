@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { Sparkles, Instagram, Twitter, Facebook, Youtube, Mail, MapPin, Phone } from "lucide-react";
 
 /**
@@ -61,12 +64,12 @@ const socialLinks = [
 ];
 
 /**
- * Footer Component
- * Professional dark grid aesthetic with navigation links
+ * Footer Component - Gold Neon Futuristic Design
+ * Minimalist design with gradient border from transparent to gold to transparent
  */
 export default function Footer() {
   return (
-    <footer className="bg-dark-navy border-t border-white/10">
+    <footer className="bg-dark-navy border-t border-white/10 footer-gradient-border">
       {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
@@ -74,14 +77,14 @@ export default function Footer() {
           <div className="lg:col-span-1">
             <Link href="/" className="flex items-center gap-2 group mb-4">
               <div className="relative">
-                <Sparkles className="w-8 h-8 text-primary transition-transform duration-300 group-hover:scale-110" />
-                <div className="absolute inset-0 blur-lg bg-primary/30 group-hover:bg-primary/50 transition-colors" />
+                <Sparkles className="w-8 h-8 text-gold-premium transition-transform duration-300 group-hover:scale-110" />
+                <div className="absolute inset-0 blur-lg bg-gold-premium/30 group-hover:bg-gold-premium/50 transition-colors" />
               </div>
-              <span className="font-syne font-bold text-2xl tracking-tight text-white drop-shadow-[0_0_10px_rgba(255,215,0,0.5)]">
-                After<span className="text-primary">Hours</span><span className="text-gold">ID</span>
+              <span className="font-syne font-bold text-2xl tracking-tight text-white drop-shadow-[0_0_10px_rgba(199,164,15,0.5)]">
+                After<span className="text-gold-premium">Hours</span><span className="text-gold-premium">ID</span>
               </span>
             </Link>
-            <p className="text-white/60 text-sm leading-relaxed mb-6 max-w-sm">
+            <p className="text-white/60 text-sm leading-relaxed mb-6 max-w-sm tracking-wide">
               Your ultimate guide to premium nightlife experiences. 
               Discover the best venues, events, and entertainment in your city.
             </p>
@@ -89,18 +92,18 @@ export default function Footer() {
             {/* Contact Info */}
             <div className="space-y-3 text-sm text-white/60">
               <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-primary" />
+                <MapPin className="w-4 h-4 text-gold-premium" />
                 <span>Bandung, Indonesia</span>
               </div>
               <div className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-primary" />
-                <a href="mailto:hello@nightlife.app" className="hover:text-white transition-colors">
+                <Mail className="w-4 h-4 text-gold-premium" />
+                <a href="mailto:hello@nightlife.app" className="hover:text-gold-premium transition-colors">
                   hello@nightlife.com
                 </a>
               </div>
               <div className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-primary" />
-                <a href="tel:+6289669094929" className="hover:text-white transition-colors">
+                <Phone className="w-4 h-4 text-gold-premium" />
+                <a href="tel:+6289669094929" className="hover:text-gold-premium transition-colors">
                   +62 896 6909 4929
                 </a>
               </div>
@@ -118,7 +121,7 @@ export default function Footer() {
                   <li key={link.label}>
                     <Link
                       href={link.href}
-                      className="text-white/60 text-sm hover:text-primary transition-colors"
+                      className="text-white/60 text-sm hover:text-gold-premium transition-colors"
                     >
                       {link.label}
                     </Link>
@@ -137,7 +140,7 @@ export default function Footer() {
               <li>
                 <Link
                   href="/web3"
-                  className="text-white/60 text-sm hover:text-primary transition-colors"
+                  className="text-white/60 text-sm hover:text-gold-premium transition-colors"
                 >
                   Coming Soon
                 </Link>
@@ -191,16 +194,18 @@ export default function Footer() {
               {socialLinks.map((social) => {
                 const Icon = social.icon;
                 return (
-                  <a
+                  <motion.a
                     key={social.label}
                     href={social.href}
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={social.label}
-                    className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/60 hover:bg-white/10 hover:text-primary transition-all duration-300"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/60 hover:bg-gold-premium/20 hover:text-gold-premium border border-transparent hover:border-gold-premium/30 transition-all duration-300"
                   >
                     <Icon className="w-5 h-5" />
-                  </a>
+                  </motion.a>
                 );
               })}
             </div>

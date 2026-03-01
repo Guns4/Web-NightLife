@@ -39,6 +39,32 @@ enum SessionStatus {
   REVOKED
 }
 
+// Payment Status Enum
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+// Payment Method Enum
+enum PaymentMethod {
+  CREDIT_CARD
+  DEBIT_CARD
+  BANK_TRANSFER
+  E_WALLET
+  GOPAY
+  OVO
+  DANA
+  SHOPEEPAY
+  QRIS
+}
+
+// Ad Slot Status Enum
+enum AdSlotStatus {
+  AVAILABLE
+  BOOKED
+}
+
 // =====================================================
 // MODELS
 // =====================================================
@@ -94,6 +120,10 @@ model User {
   vibeChecks    VibeCheck[]
   bookings      Booking[]
   wallet        Wallet?
+  gamification  UserGamification?
+  memberships   Membership[]
+  notifications Notification[]
+  promoPurchases PromoPurchase[]
   
   @@index([email])
   @@index([phone])
@@ -224,6 +254,8 @@ model Venue {
   vibeChecks  VibeCheck[]
   bookings    Booking[]
   promos      Promo[]
+  adSlots     AdSlot[]
+  openingHours OpeningHours[]
 }
 
 // =====================================================
@@ -332,6 +364,9 @@ model Booking {
   venue         Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
   user          User?    @relation(fields: [userId], references: [id])
   
+  // Payment relation - as per task requirement
+  payment       Payment?
+  
   @@index([venueId])
   @@index([userId])
   @@index([status])
@@ -354,6 +389,7 @@ model Promo {
   createdAt   DateTime @default(now())
   
   venue       Venue   @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  purchases   PromoPurchase[]
 }
 
 // =====================================================
@@ -390,41 +426,21 @@ model AdSlot {
   @@index([startDate, endDate])
 }
 
-enum PaymentStatus {
-  PENDING
-  PROCESSING
-  SETTLED
-  FAILED
-  EXPIRED
-  CANCELLED
-  REFUNDED
-}
-
-enum PaymentMethod {
-  CREDIT_CARD
-  DEBIT_CARD
-  BANK_TRANSFER
-  E_WALLET
-  GOPAY
-  OVO
-  DANA
-  SHOPEEPAY
-  QRIS
-}
-
+// Payment Model - as per task requirements
 model Payment {
   id              String        @id @default(cuid())
-  adSlotId        String        @unique
+  bookingId       String?       @unique       // Connection to Booking as per task
+  adSlotId        String?       @unique       // Legacy field for backward compatibility
   
   // Payment Details
   amount          Float
   currency        String        @default("IDR")
-  method          PaymentMethod?
-  status          PaymentStatus  @default(PENDING)
+  status          PaymentStatus @default(PENDING)
+  paymentMethod   PaymentMethod?
   
   // Gateway Reference
   transactionId   String?       @unique  // Midtrans/Xendit transaction ID
-  orderId         String?        @unique
+  orderId         String?       @unique
   
   // Payment Info
   customerName    String?
@@ -441,10 +457,12 @@ model Payment {
   webhookPayload  Json?
   
   // Relations
-  adSlot          AdSlot       @relation(fields: [adSlotId], references: [id], onDelete: Cascade)
+  booking         Booking?      @relation(fields: [bookingId], references: [id])
+  adSlot          AdSlot?       @relation(fields: [adSlotId], references: [id], onDelete: Cascade)
   
   @@index([status])
   @@index([transactionId])
+  @@index([bookingId])
   @@index([createdAt])
 }
 
@@ -506,7 +524,10 @@ model UserGamification {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   
+  // Relations
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badges          UserBadge[]
+  missions        UserMission[]
   
   @@index([currentXp])
   @@index([currentLevel])
@@ -553,7 +574,8 @@ model UserBadge {
   badgeId     String
   earnedAt    DateTime @default(now())
   
-  user        UserGamification @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  // Relations
+  user        UserGamification @relation(fields: [userId], references: [id], onDelete: Cascade)
   badge       Badge   @relation(fields: [badgeId], references: [id])
   
   @@unique([userId, badgeId])
@@ -606,7 +628,8 @@ model UserMission {
   completedAt DateTime?
   expiresAt   DateTime
   
-  user        UserGamification @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  // Relations
+  user        UserGamification @relation(fields: [userId], references: [id], onDelete: Cascade)
   mission     Mission       @relation(fields: [missionId], references: [id])
   
   @@unique([userId, missionId])
@@ -629,4 +652,162 @@ model AuditLog {
   @@index([action])
   @@index([resource])
   @@index([createdAt])
+}
+
+// =====================================================
+// NOTIFICATION MODEL
+// =====================================================
+
+enum NotificationType {
+  GENERAL
+  BOOKING
+  PROMO
+  SYSTEM
+}
+
+enum NotificationPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+model Notification {
+  id          String             @id @default(cuid())
+  userId      String             @map("recipientId") // Maps to recipientId in code
+  title       String
+  message     String
+  type        NotificationType   @default(GENERAL)
+  read        Boolean            @map("isRead") // Maps to isRead in code
+  priority    NotificationPriority @default(NORMAL)
+  link        String?
+  data        Json?              @map("metadata") // Additional notification data
+  createdAt   DateTime           @default(now())
+  
+  // Relations
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+  
+  @@map("notification")
+}
+
+// =====================================================
+// MEMBERSHIP MODEL
+// =====================================================
+
+enum MembershipTier {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+  DIAMOND
+}
+
+enum MembershipStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  SUSPENDED
+}
+
+model Membership {
+  id          String          @id @default(cuid())
+  userId      String          @unique
+  tier        MembershipTier  @default(BRONZE)
+  startDate   DateTime        @default(now())
+  endDate     DateTime?
+  status      MembershipStatus @default(ACTIVE)
+  autoRenew   Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  
+  // Relations
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([status])
+  @@index([endDate])
+}
+
+// =====================================================
+// PROMO PURCHASE MODEL
+// =====================================================
+
+enum PromoPurchaseStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+model PromoPurchase {
+  id          String               @id @default(cuid())
+  userId      String
+  promoId     String
+  orderId     String?              // Reference from payment gateway
+  amount      Float               @default(0)
+  currency    String               @default("IDR")
+  status      PromoPurchaseStatus @default(PENDING)
+  paymentId   String?              // Reference to payment gateway transaction
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  
+  // Relations
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promo       Promo               @relation(fields: [promoId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([promoId])
+  @@index([status])
+  @@index([orderId])
+  
+  @@map("promo_purchase")
+}
+
+// =====================================================
+// SYSTEM AUDIT LOG MODEL
+// =====================================================
+
+model SystemAuditLog {
+  id          String   @id @default(cuid())
+  action      String
+  resource    String
+  resourceId  String?  @map("targetId")
+  targetType  String?
+  details     Json?    
+  ipAddress   String?
+  userAgent   String?
+  userId      String?
+  userEmail   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([action])
+  @@index([resource])
+  @@index([userId])
+  @@index([createdAt])
+  
+  @@map("system_audit_log")
+}
+
+// =====================================================
+// OPENING HOURS MODEL
+// =====================================================
+
+model OpeningHours {
+  id          String   @id @default(cuid())
+  venueId     String
+  day         Int      // 0=Sunday, 1=Monday, ..., 6=Saturday
+  openTime    String   // "09:00"
+  closeTime   String   // "22:00"
+  isClosed    Boolean  @default(false)
+  
+  // Relations
+  venue       Venue   @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  
+  @@unique([venueId, day])
+  @@index([venueId])
 }

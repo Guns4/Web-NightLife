@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDashboardSummary, getROITimeSeries, getBookingHeatmap } from '@/lib/services/roi-dashboard-service';
 import { formatCurrency } from '@/lib/services/i18n-service';
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 
 /**
  * WhatsApp message template for CEO summary

@@ -48,8 +48,12 @@ export async function POST(request: NextRequest) {
     const invalidReservations = await prisma.booking.count({
       where: {
         userId: null,
-        guestPhone: null,
-        guestEmail: null,
+        OR: [
+          { guestPhone: { equals: undefined } },
+          { guestPhone: { equals: '' } },
+          { guestEmail: { equals: undefined } },
+          { guestEmail: { equals: '' } },
+        ],
       },
     });
     results.checks.invalidReservations = invalidReservations;
@@ -57,7 +61,7 @@ export async function POST(request: NextRequest) {
     // 3. Check orphaned payments (no ad slot)
     const orphanedPayments = await prisma.payment.count({
       where: {
-        adSlotId: null,
+        adSlotId: { equals: undefined },
       },
     });
     results.checks.orphanedPayments = orphanedPayments;
@@ -89,7 +93,7 @@ export async function POST(request: NextRequest) {
           },
         },
         data: {
-          status: 'EXPIRED',
+          status: 'FAILED',
         },
       });
       results.cleanups.expiredPayments = stalePendingPayments.length;

@@ -1,0 +1,98 @@
+src/app/api/cron/system-audit/route.ts(52,27): error TS2322: Type 'null' is not assignable to type 'string | FieldRef<"Booking", "String"> | undefined'.
+src/app/api/cron/system-audit/route.ts(64,21): error TS2322: Type 'null' is not assignable to type 'string | FieldRef<"Payment", "String"> | undefined'.
+src/app/api/sitemap/route.ts(45,16): error TS2561: Object literal may only specify known properties, but 'is_active' does not exist in type 'VenueWhereInput'. Did you mean to write 'isActive'?
+src/app/api/sitemap/route.ts(51,9): error TS2561: Object literal may only specify known properties, but 'updated_at' does not exist in type 'VenueSelect<DefaultArgs>'. Did you mean to write 'updatedAt'?
+src/app/api/sitemap/route.ts(56,11): error TS2322: Type '{ totalReviews: number; id: string; name: string; slug: string; description: string | null; address: string | null; city: string | null; ownerId: string | null; latitude: number | null; ... 13 more ...; updatedAt: Date; }[]' is not assignable to type '{ id: string; name: string; city: string; category: string; updated_at: Date | null; }[]'.
+  Property 'updated_at' is missing in type '{ totalReviews: number; id: string; name: string; slug: string; description: string | null; address: string | null; city: string | null; ownerId: string | null; latitude: number | null; ... 13 more ...; updatedAt: Date; }' but required in type '{ id: string; name: string; city: string; category: string; updated_at: Date | null; }'.
+src/app/api/webhooks/midtrans/route.ts(84,33): error TS2769: No overload matches this call.
+  Overload 2 of 2, '(fn: (prisma: Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">) => Promise<...>, options?: { ...; } | undefined): Promise<...>', gave the following error.
+    Argument of type 'Promise<void | BatchPayload>[]' is not assignable to parameter of type '(prisma: Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">) => Promise<...>'.
+      Type 'Promise<void | BatchPayload>[]' provides no match for the signature '(prisma: Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">): Promise<...>'.
+src/app/api/webhooks/midtrans/route.ts(87,20): error TS2353: Object literal may only specify known properties, and 'orderId' does not exist in type 'BookingWhereInput'.
+src/app/api/webhooks/midtrans/route.ts(93,20): error TS2353: Object literal may only specify known properties, and 'orderId' does not exist in type 'PromoPurchaseWhereInput'.
+src/app/api/webhooks/midtrans/route.ts(99,20): error TS2353: Object literal may only specify known properties, and 'orderId' does not exist in type 'MembershipWhereInput'.
+src/app/api/webhooks/payments/route.ts(81,16): error TS2322: Type 'string | null' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+src/app/api/webhooks/payments/route.ts(120,11): error TS2322: Type 'string | null' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+src/app/venue/[id]/page.tsx(481,16): error TS2739: Type '{ venueId: string; venueLat: number; venueLon: number; onReviewSubmitted: (reviewData: any) => void; }' is missing the following properties from type 'ReviewFormProps': userId, userName
+src/components/sections/NearYouSection.tsx(237,21): error TS2322: Type 'VenueWithRelations' is not assignable to type 'Venue'.
+  Types of property 'price_range' are incompatible.
+    Type 'number | null' is not assignable to type 'string | null | undefined'.
+      Type 'number' is not assignable to type 'string'.
+src/components/sections/NearYouSection.tsx(239,21): error TS2322: Type 'import("d:/WebsiteNightLife/src/lib/database/types").LiveVibe | null | undefined' is not assignable to type 'LiveVibe | null | undefined'.
+  Type 'import("d:/WebsiteNightLife/src/lib/database/types").LiveVibe' is not assignable to type 'LiveVibe'.
+    Types of property 'status' are incompatible.
+      Type 'LiveVibeStatus' is not assignable to type '"quiet" | "moderate" | "packed" | "busy"'.
+        Type '"full"' is not assignable to type '"quiet" | "moderate" | "packed" | "busy"'.
+src/lib/__tests__/auth.test.ts(8,59): error TS2307: Cannot find module '@jest/globals' or its corresponding type declarations.
+src/lib/__tests__/auth.test.ts(26,10): error TS2305: Module '"@/lib/auth/auth-utils"' has no exported member 'signJWT'.
+src/lib/__tests__/auth.test.ts(26,19): error TS2305: Module '"@/lib/auth/auth-utils"' has no exported member 'verifyJWT'.
+src/lib/__tests__/auth.test.ts(27,46): error TS2307: Cannot find module '@/lib/auth/password-service' or its corresponding type declarations.
+src/lib/auth/rsa-keys.ts(58,30): error TS18047: 'pathModule' is possibly 'null'.
+src/lib/auth/rsa-keys.ts(59,29): error TS18047: 'pathModule' is possibly 'null'.
+src/lib/auth/rsa-keys.ts(61,9): error TS18047: 'fsModule' is possibly 'null'.
+src/lib/auth/rsa-keys.ts(61,50): error TS18047: 'fsModule' is possibly 'null'.
+src/lib/auth/rsa-keys.ts(63,21): error TS18047: 'fsModule' is possibly 'null'.
+src/lib/auth/rsa-keys.ts(64,20): error TS18047: 'fsModule' is possibly 'null'.
+src/lib/auth/rsa-keys.ts(73,37): error TS18047: 'cryptoModule' is possibly 'null'.
+src/lib/auth/rsa-keys.ts(88,10): error TS18047: 'fsModule' is possibly 'null'.
+src/lib/auth/rsa-keys.ts(89,7): error TS18047: 'fsModule' is possibly 'null'.
+src/lib/auth/rsa-keys.ts(91,30): error TS18047: 'pathModule' is possibly 'null'.
+src/lib/auth/rsa-keys.ts(92,29): error TS18047: 'pathModule' is possibly 'null'.
+src/lib/auth/rsa-keys.ts(93,5): error TS18047: 'fsModule' is possibly 'null'.
+src/lib/auth/rsa-keys.ts(94,5): error TS18047: 'fsModule' is possibly 'null'.
+src/lib/auth/rsa-keys.ts(132,12): error TS18047: 'cryptoModule' is possibly 'null'.
+src/lib/hooks/index.ts(9,10): error TS2305: Module '"@/lib/auth/store"' has no exported member 'useAuth'.
+src/lib/hooks/index.ts(29,10): error TS2305: Module '"@/lib/hooks/useSWR"' has no exported member 'useVenues'.
+src/lib/hooks/index.ts(29,21): error TS2305: Module '"@/lib/hooks/useSWR"' has no exported member 'useVenue'.
+src/lib/hooks/index.ts(29,31): error TS2305: Module '"@/lib/hooks/useSWR"' has no exported member 'useNearbyVenues'.
+src/lib/hooks/useSocket.tsx(5,10): error TS2305: Module '"socket.io-client"' has no exported member 'io'.
+src/lib/hooks/useSocket.tsx(10,11): error TS2749: 'Socket' refers to a value, but is being used as a type here. Did you mean 'typeof Socket'?
+src/lib/hooks/useSocket.tsx(47,40): error TS2749: 'Socket' refers to a value, but is being used as a type here. Did you mean 'typeof Socket'?
+src/lib/server/audit-log.ts(61,9): error TS2353: Object literal may only specify known properties, and 'userEmail' does not exist in type '(Without<SystemAuditLogCreateInput, SystemAuditLogUncheckedCreateInput> & SystemAuditLogUncheckedCreateInput) | (Without<...> & SystemAuditLogCreateInput)'.
+src/lib/server/audit-log.ts(212,20): error TS2345: Argument of type '(log: AuditLogRecord) => { id: string; action: string; userId: string; userEmail: string; targetType: string; targetId: string; details: any; ipAddress: string; userAgent: string; createdAt: Date; updatedAt: Date; }' is not assignable to parameter of type '(value: { id: string; createdAt: Date; userId: string | null; userAgent: string | null; ipAddress: string | null; action: string; resource: string; details: JsonValue; resourceId: string | null; }, index: number, array: { ...; }[]) => { ...; }'.
+  Types of parameters 'log' and 'value' are incompatible.
+    Type '{ id: string; createdAt: Date; userId: string | null; userAgent: string | null; ipAddress: string | null; action: string; resource: string; details: JsonValue; resourceId: string | null; }' is missing the following properties from type 'AuditLogRecord': userEmail, targetType, targetId, updatedAt
+src/lib/services/ads/ads-placement.ts(78,10): error TS2352: Conversion of type '{ totalReviews: number; id: string; name: string; slug: string; description: string | null; address: string | null; city: string | null; ownerId: string | null; latitude: number | null; ... 13 more ...; updatedAt: Date; }[]' to type 'BoostedVenue[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Property 'boostType' is missing in type '{ totalReviews: number; id: string; name: string; slug: string; description: string | null; address: string | null; city: string | null; ownerId: string | null; latitude: number | null; ... 13 more ...; updatedAt: Date; }' but required in type 'BoostedVenue'.
+src/lib/services/analytics/analytics-service.ts(9,10): error TS2305: Module '"@/lib/services/promo/mongo-promo-service"' has no exported member 'getMongoDB'.
+src/lib/services/analytics/analytics-service.ts(244,24): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/lib/services/gamification/gamification-service.ts(365,5): error TS2322: Type '{ user: { city: { equals: string; mode: string; }; }; } | { user?: undefined; }' is not assignable to type 'UserGamificationWhereInput | undefined'.
+  Type '{ user: { city: { equals: string; mode: string; }; }; }' is not assignable to type 'UserGamificationWhereInput'.
+    Types of property 'user' are incompatible.
+      Type '{ city: { equals: string; mode: string; }; }' is not assignable to type '(Without<UserRelationFilter, UserWhereInput> & UserWhereInput) | (Without<UserWhereInput, UserRelationFilter> & UserRelationFilter) | undefined'.
+        Type '{ city: { equals: string; mode: string; }; }' is not assignable to type '(Without<UserRelationFilter, UserWhereInput> & UserWhereInput) | (Without<UserWhereInput, UserRelationFilter> & UserRelationFilter)'.
+          Type '{ city: { equals: string; mode: string; }; }' is not assignable to type 'Without<UserWhereInput, UserRelationFilter> & UserRelationFilter'.
+            Type '{ city: { equals: string; mode: string; }; }' is not assignable to type 'Without<UserWhereInput, UserRelationFilter>'.
+              Types of property 'city' are incompatible.
+                Type '{ equals: string; mode: string; }' is not assignable to type 'undefined'.
+src/lib/services/gamification/gamification-service.ts(385,24): error TS2339: Property 'user' does not exist on type '{ totalReviews: number; id: string; createdAt: Date; updatedAt: Date; userId: string; referralCode: string; currentXp: number; totalXp: number; currentLevel: number; streakDays: number; ... 6 more ...; referralCount: number; }'.
+src/lib/services/gamification/gamification-service.ts(386,22): error TS2339: Property 'user' does not exist on type '{ totalReviews: number; id: string; createdAt: Date; updatedAt: Date; userId: string; referralCode: string; currentXp: number; totalXp: number; currentLevel: number; streakDays: number; ... 6 more ...; referralCount: number; }'.
+src/lib/services/gamification/gamification-service.ts(387,17): error TS2339: Property 'user' does not exist on type '{ totalReviews: number; id: string; createdAt: Date; updatedAt: Date; userId: string; referralCode: string; currentXp: number; totalXp: number; currentLevel: number; streakDays: number; ... 6 more ...; referralCount: number; }'.
+src/lib/services/gamification/gamification-service.ts(433,7): error TS2353: Object literal may only specify known properties, and 'userBadges' does not exist in type 'UserGamificationInclude<DefaultArgs>'.
+src/lib/services/notifications/notification-schema.ts(51,7): error TS2353: Object literal may only specify known properties, and 'recipientId' does not exist in type '(Without<NotificationCreateInput, NotificationUncheckedCreateInput> & NotificationUncheckedCreateInput) | (Without<...> & NotificationCreateInput)'.
+src/lib/services/notifications/notification-schema.ts(119,7): error TS2353: Object literal may only specify known properties, and 'recipientId' does not exist in type 'NotificationWhereUniqueInput'.
+src/lib/services/notifications/notification-schema.ts(122,7): error TS2561: Object literal may only specify known properties, but 'isRead' does not exist in type '(Without<NotificationUpdateInput, NotificationUncheckedUpdateInput> & NotificationUncheckedUpdateInput) | (Without<...> & NotificationUpdateInput)'. Did you mean to write 'read'?
+src/lib/services/notifications/notification-schema.ts(134,7): error TS2353: Object literal may only specify known properties, and 'recipientId' does not exist in type 'NotificationWhereInput'.
+src/lib/services/notifications/notification-schema.ts(138,7): error TS2561: Object literal may only specify known properties, but 'isRead' does not exist in type '(Without<NotificationUpdateManyMutationInput, NotificationUncheckedUpdateManyInput> & NotificationUncheckedUpdateManyInput) | (Without<...> & NotificationUpdateManyMutationInput)'. Did you mean to write 'read'?
+src/lib/services/notifications/notification-schema.ts(154,7): error TS2561: Object literal may only specify known properties, but 'isRead' does not exist in type 'NotificationWhereInput'. Did you mean to write 'read'?
+src/lib/services/notifications/notification-schema.ts(167,7): error TS2353: Object literal may only specify known properties, and 'recipientId' does not exist in type 'NotificationWhereInput'.
+src/lib/services/notifications/notification-schema.ts(186,5): error TS2322: Type '{ link?: string | undefined; type: NotificationType; title: string; message: string; priority?: NotificationPriority | undefined; metadata?: Record<...> | undefined; recipientId: string; }[]' is not assignable to type 'NotificationCreateManyInput | NotificationCreateManyInput[]'.
+  Type '{ link?: string | undefined; type: NotificationType; title: string; message: string; priority?: NotificationPriority | undefined; metadata?: Record<...> | undefined; recipientId: string; }[]' is not assignable to type 'NotificationCreateManyInput[]'.
+    Property 'userId' is missing in type '{ link?: string | undefined; type: NotificationType; title: string; message: string; priority?: NotificationPriority | undefined; metadata?: Record<string, any> | undefined; recipientId: string; }' but required in type 'NotificationCreateManyInput'.
+src/lib/services/notifications/socket-service.ts(9,50): error TS2307: Cannot find module 'socket.io' or its corresponding type declarations.
+src/lib/services/payments/payment-service.ts(254,7): error TS2322: Type 'string' is not assignable to type 'PaymentStatus | EnumPaymentStatusFieldUpdateOperationsInput | undefined'.
+src/lib/services/rabbitmq-producer.ts(96,7): error TS2739: Type 'ChannelModel' is missing the following properties from type 'Connection': serverProperties, expectSocketClose, sentSinceLastCheck, recvSinceLastCheck, sendMessage
+src/lib/services/rabbitmq-producer.ts(97,28): error TS2531: Object is possibly 'null'.
+src/lib/services/rabbitmq-producer.ts(97,44): error TS2339: Property 'createChannel' does not exist on type 'Connection'.
+src/lib/services/rabbitmq-producer.ts(105,7): error TS2531: Object is possibly 'null'.
+src/lib/services/rabbitmq-producer.ts(110,7): error TS2531: Object is possibly 'null'.
+src/lib/services/rabbitmq-producer.ts(319,29): error TS2339: Property 'close' does not exist on type 'Connection'.
+src/lib/services/reservations/reservation-service.ts(112,24): error TS2352: Conversion of type '{ id: string; venueId: string; day: number; openTime: string; closeTime: string; isClosed: boolean; }[]' to type 'Record<string, { open: string; close: string; }>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Index signature for type 'string' is missing in type '{ id: string; venueId: string; day: number; openTime: string; closeTime: string; isClosed: boolean; }[]'.
+src/lib/services/reservations/reservation-service.ts(305,24): error TS2345: Argument of type '(res: BookingData) => void' is not assignable to parameter of type '(value: { date: Date; time: string; pax: number; }, index: number, array: { date: Date; time: string; pax: number; }[]) => void'.
+  Types of parameters 'res' and 'value' are incompatible.
+    Property 'id' is missing in type '{ date: Date; time: string; pax: number; }' but required in type 'BookingData'.
+src/lib/services/reviews/review-engine.ts(134,67): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.

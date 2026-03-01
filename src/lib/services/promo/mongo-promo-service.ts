@@ -31,14 +31,25 @@ async function getClient(): Promise<MongoClient> {
 }
 
 /**
- * Get database instance
+ * Get database instance (exported for use in other services)
  */
-async function getDb(): Promise<Db> {
+export async function getDb(): Promise<Db> {
   if (!db) {
     const mongoClient = await getClient();
     db = mongoClient.db(MONGODB_DB);
   }
   return db;
+}
+
+/**
+ * Get MongoDB client (alias for backward compatibility)
+ */
+export async function getMongoDB(): Promise<MongoClient | null> {
+  try {
+    return await getClient();
+  } catch {
+    return null;
+  }
 }
 
 // =====================================================

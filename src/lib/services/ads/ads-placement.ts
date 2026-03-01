@@ -65,17 +65,35 @@ async function getBoostedVenues(tier?: AdTier): Promise<BoostedVenue[]> {
     isBoosted: true,
   };
 
-  if (tier) {
-    where.boostType = tier;
-  }
-
+  // Note: boostType is stored in AdSlot, not Venue
+  // For now, we'll return all boosted venues and filter by tier at the usage site
+  
   const venues = await prisma.venue.findMany({
     where,
     orderBy: { trustScore: 'desc' },
     take: 10,
   });
 
-  return venues as BoostedVenue[];
+  // Map to BoostedVenue - boostType will be determined by AdSlot relationship
+  return venues.map(venue => ({
+    id: venue.id,
+    name: venue.name,
+    slug: venue.slug,
+    description: venue.description,
+    address: venue.address,
+    city: venue.city || '',
+    category: venue.category || '',
+    musicGenres: venue.musicGenres || [],
+    vibes: venue.vibes || [],
+    facilities: venue.facilities || [],
+    isVerified: venue.isVerified || false,
+    isBoosted: venue.isBoosted || false,
+    boostType: null, // Will be set based on AdSlot tier
+    trustScore: venue.trustScore || 50,
+    galleryImages: venue.galleryImages || [],
+    latitude: venue.latitude || null,
+    longitude: venue.longitude || null,
+  }));
 }
 
 /**

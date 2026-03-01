@@ -2,19 +2,14 @@
  * =====================================================
  * AFTERHOURS ID - AUTH MIDDLEWARE
  * JWT-based route protection with role-based access
+ * EDGE COMPATIBLE - Uses jose library for JWT verification
  * =====================================================
  */
 
 import { NextResponse, type NextRequest } from "next/server";
-import { 
-  verifyAccessToken, 
-  getAccessTokenFromCookie,
-  canAccessAdmin,
-  canAccessOwner,
-  getDashboardByRole,
-  type UserRole 
-} from "@/lib/auth/auth-utils";
+import { verifyTokenEdge, verifyTokenSimple } from "@/lib/auth/edge-jwt";
 import { hasPermission, isSuperAdmin, type Permission } from "@/lib/auth/rbac";
+import { getDashboardByRole, canAccessAdmin, canAccessOwner, type UserRole } from "@/lib/auth/auth-utils";
 
 // Rate limiting map for GPS verification endpoint
 const gpsRateLimit = new Map<string, { count: number; resetTime: number }>();
@@ -122,7 +117,8 @@ async function getJWTFromRequest(request: NextRequest): Promise<string | null> {
   }
   
   // Fall back to cookie
-  return getAccessTokenFromCookie();
+  const tokenCookie = request.cookies.get("ah_access_token");
+  return tokenCookie?.value || null;
 }
 
 /**
@@ -175,8 +171,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Verify the JWT
-  const payload = verifyAccessToken(token);
+  // Verify the JWT using Edge-compatible verification
+  // Try RS256 verification first (with public key from env)
+  let payload = await verifyTokenEdge(token);
+  
+  // Fall back to simple verification for development (decodes without verification)
+  if (!payload && process.env.NODE_ENV === 'development') {
+    payload = await verifyTokenSimple(token);
+  }
   
   if (!payload) {
     // Token invalid or expired
@@ -249,6 +251,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
+  runtime: 'nodejs', // Use Node.js runtime for middleware to avoid Edge compatibility issues
   matcher: [
     /*
      * Match all request paths except:

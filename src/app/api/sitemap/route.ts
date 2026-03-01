@@ -42,13 +42,13 @@ export async function GET() {
   // Dynamic venue pages
   try {
     const venues = await prisma.venue.findMany({
-      where: { is_active: true },
+      where: { isActive: true },
       select: {
         id: true,
         name: true,
         city: true,
         category: true,
-        updated_at: true,
+        updatedAt: true,
       },
       take: 1000, // Limit for performance
     });
@@ -56,16 +56,16 @@ export async function GET() {
     const venueData: Array<{
       id: string;
       name: string;
-      city: string;
-      category: string;
-      updated_at: Date | null;
+      city: string | null;
+      category: string | null;
+      updatedAt: Date | null;
     }> = venues;
 
     venueData.forEach((venue) => {
       const slug = venue.name.toLowerCase().replace(/\s+/g, '-');
       urls.push({
         loc: `${baseUrl}/venue/${venue.id}/${slug}`,
-        lastmod: venue.updated_at?.toISOString() || new Date().toISOString(),
+        lastmod: venue.updatedAt?.toISOString() || new Date().toISOString(),
         changefreq: 'weekly',
         priority: 0.8,
       });
