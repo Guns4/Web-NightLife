@@ -197,7 +197,7 @@ function createNeonMarkerElement(venue: Venue, isSelected: boolean, isHovered: b
 
 function createInfoWindowContent(venue: Venue): string {
   const ratingStars = '★'.repeat(Math.floor(venue.rating)) + '☆'.repeat(5 - Math.floor(venue.rating));
-  
+
   return `
     <div class="map-infowindow" style="
       background: rgba(18, 18, 26, 0.95);
@@ -289,7 +289,7 @@ export default function NeonMap({
   useEffect(() => {
     const initMap = async () => {
       const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-      
+
       if (!apiKey) {
         console.error('Google Maps API key not found');
         return;
@@ -416,7 +416,7 @@ export default function NeonMap({
   return (
     <div className="relative w-full h-full">
       <div ref={mapRef} className="w-full h-full rounded-xl overflow-hidden" />
-      
+
       {/* Map Controls Overlay */}
       <div className="absolute bottom-4 right-4 flex flex-col gap-2">
         <button

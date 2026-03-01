@@ -16,18 +16,18 @@
   --color-neon-gold: #ffd700;
   --color-neon-green: #00ff88;
   --color-neon-red: #ff3366;
-  
+
   /* Dark Palette */
   --color-dark-obsidian: #0a0a0f;
   --color-dark-void: #12121a;
   --color-dark-charcoal: #1a1a24;
   --color-dark-graphite: #252532;
-  
+
   /* Glass Effects */
   --glass-bg: rgba(18, 18, 26, 0.7);
   --glass-border: rgba(255, 255, 255, 0.08);
   --glass-highlight: rgba(255, 255, 255, 0.12);
-  
+
   /* Font Families */
   --font-display: 'Montserrat', system-ui, sans-serif;
   --font-body: 'Inter', system-ui, sans-serif;
@@ -47,24 +47,33 @@
   --neon-green: #00ff88;
   --neon-red: #ff3366;
   --neon-blue: #0088ff;
-  
+
   /* Dark Palette */
   --dark-obsidian: #0a0a0f;
   --dark-void: #12121a;
   --dark-charcoal: #1a1a24;
   --dark-graphite: #252532;
-  
+
   /* Spacing - 8pt Grid System */
-  --space-1: 0.25rem;   /* 4px */
-  --space-2: 0.5rem;    /* 8px */
-  --space-3: 0.75rem;   /* 12px */
-  --space-4: 1rem;      /* 16px */
-  --space-5: 1.25rem;   /* 20px */
-  --space-6: 1.5rem;    /* 24px */
-  --space-8: 2rem;      /* 32px */
-  --space-10: 2.5rem;   /* 40px */
-  --space-12: 3rem;     /* 48px */
-  
+  --space-1: 0.25rem;
+  /* 4px */
+  --space-2: 0.5rem;
+  /* 8px */
+  --space-3: 0.75rem;
+  /* 12px */
+  --space-4: 1rem;
+  /* 16px */
+  --space-5: 1.25rem;
+  /* 20px */
+  --space-6: 1.5rem;
+  /* 24px */
+  --space-8: 2rem;
+  /* 32px */
+  --space-10: 2.5rem;
+  /* 40px */
+  --space-12: 3rem;
+  /* 48px */
+
   /* Typography Scale */
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
@@ -75,7 +84,7 @@
   --font-size-3xl: 1.875rem;
   --font-size-4xl: 2.25rem;
   --font-size-5xl: 3rem;
-  
+
   /* Letter Spacing */
   --tracking-tighter: -0.05em;
   --tracking-tight: -0.025em;
@@ -91,7 +100,7 @@
 /* Elastic Spring Button Animation */
 .btn-elastic {
   transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275),
-              box-shadow 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .btn-elastic:hover {
@@ -105,7 +114,7 @@
 /* Card Hover Effect */
 .card-elastic {
   transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275),
-              box-shadow 0.3s ease;
+    box-shadow 0.3s ease;
 }
 
 .card-elastic:hover {
@@ -115,8 +124,8 @@
 /* Input Focus Animation */
 .input-elastic {
   transition: border-color 0.2s ease,
-              box-shadow 0.2s ease,
-              transform 0.1s ease;
+    box-shadow 0.2s ease,
+    transform 0.1s ease;
 }
 
 .input-elastic:focus {
@@ -169,7 +178,12 @@ input[type="radio"] {
  * ===================================================== */
 
 /* Headlines with tight letter spacing */
-h1, h2, h3, h4, h5, h6,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
 .text-headline {
   letter-spacing: -0.025em;
   line-height: 1.2;
@@ -181,7 +195,9 @@ h1, h2, h3, h4, h5, h6,
 }
 
 /* Body text with comfortable reading */
-p, li, span.text-body {
+p,
+li,
+span.text-body {
   letter-spacing: 0;
   line-height: 1.6;
 }
@@ -193,7 +209,9 @@ p, li, span.text-body {
 }
 
 /* Monospace for code */
-code, pre, .font-mono {
+code,
+pre,
+.font-mono {
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
   letter-spacing: 0;
 }
@@ -271,15 +289,17 @@ code, pre, .font-mono {
  * ===================================================== */
 
 /* Priority loading for hero content */
+/* NOTE: fetchpriority="high" and loading="eager" are HTML attributes,
+   apply them directly to <img> elements in JSX, not via CSS. */
 .hero-priority {
-  fetchpriority: high;
-  loading: eager;
+  will-change: transform;
 }
 
 /* Lazy load for below-fold images */
+/* NOTE: loading="lazy" and decoding="async" are HTML attributes,
+   apply them directly to <img> elements in JSX, not via CSS. */
 .lazy-load {
-  loading: lazy;
-  decoding: async;
+  content-visibility: auto;
 }
 
 /* Content visibility for long pages */
@@ -337,19 +357,22 @@ code, pre, .font-mono {
 
 /* Skeleton loading states */
 .skeleton {
-  background: linear-gradient(
-    90deg,
-    var(--dark-graphite) 25%,
-    var(--dark-charcoal) 50%,
-    var(--dark-graphite) 75%
-  );
+  background: linear-gradient(90deg,
+      var(--dark-graphite) 25%,
+      var(--dark-charcoal) 50%,
+      var(--dark-graphite) 75%);
   background-size: 200% 100%;
   animation: skeleton-loading 1.5s ease-in-out infinite;
 }
 
 @keyframes skeleton-loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* =====================================================

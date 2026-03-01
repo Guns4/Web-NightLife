@@ -20,6 +20,7 @@ export interface AuthUser {
   role: UserRole;
   isActive: boolean;
   isVerified: boolean;
+  city?: string | null;
   venues?: Array<{
     id: string;
     name: string;

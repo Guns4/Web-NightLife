@@ -3,10 +3,8 @@
  * These types provide type safety for Google Maps API usage
  */
 
-declare global {
-  interface Window {
-    google: typeof google;
-  }
+interface Window {
+  google: typeof google;
 }
 
 declare namespace google {
@@ -20,7 +18,7 @@ declare namespace google {
         constructor(options?: AdvancedMarkerElementOptions);
         position?: LatLng | LatLngLiteral | { lat: number; lng: number };
         title?: string;
-        map?: Map;
+        map?: Map | null;
         content?: HTMLElement;
         zIndex?: number;
         addListener(eventType: string, handler: Function): maps.MapsEventListener;
@@ -120,7 +118,7 @@ declare namespace google {
         getLength(): number;
       }
 
-      type GeoJsonGeometry = 
+      type GeoJsonGeometry =
         | { type: 'Point'; coordinates: [number, number] }
         | { type: 'MultiPoint'; coordinates: [number, number][] }
         | { type: 'LineString'; coordinates: [number, number][] }
@@ -171,7 +169,25 @@ declare namespace google {
       streetViewControlOptions?: StreetViewControlOptions;
       fullscreenControl?: boolean;
       fullscreenControlOptions?: FullscreenControlOptions;
+      backgroundColor?: string;
     }
+
+    /** Library types returned by importLibrary() */
+    interface MapsLibrary {
+      Map: typeof Map;
+      MapTypeId: typeof MapTypeId;
+      MapTypeStyle: MapTypeStyle;
+    }
+
+    interface MarkerLibrary {
+      AdvancedMarkerElement: typeof marker.AdvancedMarkerElement;
+      PinElement: new (options?: object) => HTMLElement;
+    }
+
+    /** importLibrary — dynamically load a Maps JS library */
+    function importLibrary(libraryName: 'maps'): Promise<MapsLibrary>;
+    function importLibrary(libraryName: 'marker'): Promise<MarkerLibrary>;
+    function importLibrary(libraryName: string): Promise<unknown>;
 
     /**
      * LatLng
@@ -299,7 +315,7 @@ declare namespace google {
      */
     class InfoWindow {
       constructor(opts?: InfoWindowOptions);
-      open(options?: InfoWindowOpenOptions): void;
+      open(options?: InfoWindowOpenOptions | Map): void;
       close(): void;
       getContent(): string | HTMLElement | null;
       getPosition(): LatLng | null | undefined;
@@ -476,5 +492,3 @@ declare namespace google {
     }
   }
 }
-
-export {};

@@ -613,3 +613,20 @@ model UserMission {
   @@index([userId])
   @@index([status])
 }
+
+// =====================================================
+// AUDIT & LOGGING MODELS
+// =====================================================
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  resource  String
+  details   String?  // JSON stringified data
+  userId    String?
+  createdAt DateTime @default(now())
+
+  @@index([action])
+  @@index([resource])
+  @@index([createdAt])
+}

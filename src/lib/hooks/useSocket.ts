@@ -28,6 +28,7 @@ interface NotificationItem {
   link?: string;
   priority?: string;
   createdAt: string;
+  readAt?: string;
 }
 
 const SocketContext = createContext<SocketContextValue>({
@@ -92,7 +93,7 @@ export function SocketProvider({ children }: SocketProviderProps) {
       setIsConnected(false);
     });
 
-    newSocket.on("connect_error", (error) => {
+    newSocket.on("connect_error", (error: Error) => {
       console.error("Socket connection error:", error);
       setIsConnected(false);
     });

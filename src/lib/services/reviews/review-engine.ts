@@ -335,12 +335,21 @@ export interface SentimentData {
   verifiedRatio: number;
 }
 
+// Type for the selected fields from VibeCheck
+interface ReviewForSentiment {
+  rating: number;
+  comment: string | null;
+  isVerifiedVisit: boolean;
+  isEliteVerified: boolean;
+  createdAt: Date;
+}
+
 /**
  * Get venue sentiment analysis data
  */
 export async function getVenueSentiment(venueId: string): Promise<SentimentData> {
   // Get all approved reviews
-  const reviews = await prisma.vibeCheck.findMany({
+  const reviews: ReviewForSentiment[] = await prisma.vibeCheck.findMany({
     where: {
       venueId,
       isApproved: true,
@@ -366,10 +375,10 @@ export async function getVenueSentiment(venueId: string): Promise<SentimentData>
   }
 
   // Calculate average rating
-  const avgRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+  const avgRating = reviews.reduce((sum: number, r: ReviewForSentiment) => sum + r.rating, 0) / reviews.length;
 
   // Calculate verified ratio
-  const verifiedCount = reviews.filter(r => r.isVerifiedVisit).length;
+  const verifiedCount = reviews.filter((r: ReviewForSentiment) => r.isVerifiedVisit).length;
   const verifiedRatio = verifiedCount / reviews.length;
 
   // Extract keywords from comments
@@ -380,14 +389,14 @@ export async function getVenueSentiment(venueId: string): Promise<SentimentData>
     "very", "really", "so", "just", "that", "my", "i", "we", "they"
   ]);
   
-  reviews.forEach(r => {
+  reviews.forEach((r: ReviewForSentiment) => {
     if (r.comment) {
       const words = r.comment.toLowerCase()
         .replace(/[^\w\s]/g, "")
         .split(/\s+/)
-        .filter(w => w.length > 2 && !commonWords.has(w));
+        .filter((w: string) => w.length > 2 && !commonWords.has(w));
       
-      words.forEach(word => {
+      words.forEach((word: string) => {
         keywordCounts.set(word, (keywordCounts.get(word) || 0) + 1);
       });
     }
@@ -403,18 +412,18 @@ export async function getVenueSentiment(venueId: string): Promise<SentimentData>
   const now = new Date();
   const fourWeeksAgo = new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000);
   
-  const ratingTrend = [];
+  const ratingTrend: { date: string; avgRating: number }[] = [];
   for (let i = 0; i < 4; i++) {
     const weekStart = new Date(fourWeeksAgo.getTime() + i * 7 * 24 * 60 * 60 * 1000);
     const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
     
-    const weekReviews = reviews.filter(r => {
+    const weekReviews = reviews.filter((r: ReviewForSentiment) => {
       const date = new Date(r.createdAt);
       return date >= weekStart && date < weekEnd;
     });
     
     if (weekReviews.length > 0) {
-      const weekAvg = weekReviews.reduce((sum, r) => sum + r.rating, 0) / weekReviews.length;
+      const weekAvg = weekReviews.reduce((sum: number, r: ReviewForSentiment) => sum + r.rating, 0) / weekReviews.length;
       ratingTrend.push({
         date: weekStart.toISOString().split("T")[0],
         avgRating: Math.round(weekAvg * 10) / 10,
